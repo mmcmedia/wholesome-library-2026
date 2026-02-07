@@ -76,14 +76,16 @@ async function retryWithVariations<T>(
 
 /**
  * Sanitize user input to prevent template injection
+ * FIX 6: Strengthen input validation
  */
 function sanitizeInput(input: string): string {
   if (!input || typeof input !== 'string') return ''
   return input
-    .replace(/[<>{}$`]/g, '') // Remove potential template injection chars
+    .replace(/[<>{}$`\n\r]/g, '') // Remove potential template injection chars + newlines
     .replace(/\${.*?}/g, '') // Remove template literals
+    .replace(/IGNORE|SYSTEM|INSTRUCTION/gi, '') // Block common injection keywords
     .trim()
-    .slice(0, 100) // Limit length
+    .slice(0, 100) // Limit length per avoid_content item
 }
 
 /**
@@ -237,6 +239,78 @@ function getChapterWordCountJson(readingLevel: string): string {
 }
 
 /**
+ * FIX 2: Genre-Specific Craft Guides
+ */
+const GENRE_CRAFT_GUIDES: Record<string, string> = {
+  mystery: `- Plant 3-5 clues early that readers can discover on rereads
+- Red herrings should feel plausible but not obvious
+- The solution must use only information the reader had access to
+- Build toward an "aha!" moment that rewards careful reading
+- Fair play: no hidden evidence revealed only at the end`,
+  
+  fantasy: `- Magic has COSTS and LIMITS (not just benefits)
+- Rules stay consistent: what works in chapter 1 works in chapter 5
+- Characters earn power through growth, not lucky discoveries
+- World-building through action and dialogue, not exposition dumps
+- One signature magical element that makes this world unique`,
+  
+  adventure: `- Raise stakes progressively: small risks to life-changing consequences
+- Physical obstacles mirror internal character challenges
+- Moments of triumph AND setback in every major sequence
+- The journey changes characters permanently
+- Sensory immersion in each new environment`,
+  
+  friendship: `- Conflicts arise from authentic differences, not misunderstandings
+- Vulnerability beats where characters reveal true fears
+- Small gestures carry emotional weight (shared looks, inside jokes)
+- Resolution comes from understanding, not one person "winning"
+- Show how differences strengthen the bond`,
+  
+  humor: `- Subvert expectations with surprising but logical twists
+- Character-driven comedy from personality quirks, not random chaos
+- Build running gags that pay off later
+- Balance silly moments with genuine heart
+- Kids laugh at cleverness, not just slapstick`,
+  
+  historical: `- Period details enhance story, never overwhelm it
+- Historical context affects character choices authentically
+- Show how kids' lives were similar AND different to today
+- One vivid historical detail per chapter (smell, sound, custom)
+- Theme connects past to timeless human experiences`,
+  
+  'science-fiction': `- One "what if" premise explored deeply vs many shallow ideas
+- Technology affects characters personally, not just plot devices
+- Future/alternate worlds have consistent internal logic
+- Scientific concepts simplified but not dumbed down
+- Wonder AND caution about technological change`,
+  
+  family: `- Family dynamics feel specific, not generic
+- Generational differences create natural tension
+- Love shown through actions, not just words
+- Imperfect people trying their best
+- Resolution acknowledges complexity (no perfect families)`,
+  
+  nature: `- Ecosystems have rhythm, cause-and-effect relationships
+- Natural world is beautiful AND indifferent (not anthropomorphized)
+- Weather, seasons, animal behavior drive plot naturally
+- Sensory details: textures, temperatures, ambient sounds
+- Respect for nature without preachiness`,
+  
+  'fairy-tale': `- Classic structure with fresh twists on familiar elements
+- Magic feels ancient, with rules not fully explained
+- Symbolic objects or numbers (three wishes, seven tasks)
+- Clear moral stakes but nuanced character choices
+- Lyrical language with memorable phrases kids will repeat`
+}
+
+/**
+ * FIX 1: Get genre-specific craft guidance
+ */
+function getGenreCraftGuidance(genre: string): string {
+  return GENRE_CRAFT_GUIDES[genre] || GENRE_CRAFT_GUIDES['adventure']
+}
+
+/**
  * Stage 1: Generate Foundation (World, Themes, Plot)
  */
 async function generateFoundation(
@@ -261,16 +335,35 @@ async function generateFoundation(
   // User prompts with slightly different framing (FIX Bug #4: NO example storylines)
   const readingLevelSpec = getReadingLevelSpecForDNA(brief.reading_level);
   
+  // FIX 1: Creative Direction Layer
+  const creativeDirection = `
+CREATIVE GOALS — Think about these BEFORE filling in the structure:
+- Create a premise kids haven't read before. What makes THIS ${brief.genre} story surprising?
+- Build at least 2 moments that will stick in memory forever (a line, an image, an unexpected turn)
+- Make conflict URGENT and PERSONAL. Abstract problems don't grip young readers — make them feel it NOW
+- Craft ONE unforgettable sensory signature (a sound, smell, or sight unique to this world)
+- Give characters flaws that make them lovable, not annoying
+
+GENRE CRAFT GUIDE for ${brief.genre}:
+${getGenreCraftGuidance(brief.genre)}
+
+Study these principles, THEN design your story structure.
+`;
+  
   const userPrompts = [
     // Variation 0: Direct approach
-    `Create the foundation for a ${brief.reading_level} ${brief.genre} story.
+    `${creativeDirection}
+
+Create the foundation for a ${brief.reading_level} ${brief.genre} story.
 Reading Level: ${readingLevelSpec}
 Characters: ${characterNames.map(name => sanitizeInput(name)).join(', ')}
 Primary Virtue: ${sanitizeInput(brief.primary_virtue)}
 Themes: ${brief.themes.map(theme => sanitizeInput(theme)).join(', ')}${avoidContentSection}`,
     
     // Variation 1: Context-first approach
-    `I need a story foundation for ${brief.reading_level} readers.
+    `${creativeDirection}
+
+I need a story foundation for ${brief.reading_level} readers.
 Reading Level: ${readingLevelSpec}
 Genre: ${sanitizeInput(brief.genre)}
 Main characters: ${characterNames.map(name => sanitizeInput(name)).join(', ')}
@@ -278,7 +371,9 @@ Core values to explore: ${brief.themes.map(theme => sanitizeInput(theme)).join('
 Primary virtue: ${sanitizeInput(brief.primary_virtue)}${avoidContentSection}`,
     
     // Variation 2: Goal-oriented approach
-    `Design a ${sanitizeInput(brief.genre)} story world that will captivate ${brief.reading_level} readers.
+    `${creativeDirection}
+
+Design a ${sanitizeInput(brief.genre)} story world that will captivate ${brief.reading_level} readers.
 Reading Level: ${readingLevelSpec}
 Protagonists: ${characterNames.map(name => sanitizeInput(name)).join(', ')}
 The story should explore ${sanitizeInput(brief.primary_virtue)} while teaching ${brief.themes.map(theme => sanitizeInput(theme)).join(' and ')}.${avoidContentSection}`

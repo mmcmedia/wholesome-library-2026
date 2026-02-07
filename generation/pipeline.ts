@@ -379,13 +379,16 @@ async function saveStory(
  */
 async function generateUniqueSlug(title: string, logger: PipelineLogger): Promise<string> {
   const supabase = getSupabaseClient()
-  let baseSlug = title
+  let baseSlug = (title || 'untitled-story')
     .toLowerCase()
     .replace(/[^\w\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .trim()
     .substring(0, 80) // Limit length
+  
+  // Ensure slug is never empty
+  if (!baseSlug) baseSlug = 'untitled-story'
   
   let slug = baseSlug
   let suffix = 1

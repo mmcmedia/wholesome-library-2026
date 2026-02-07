@@ -170,7 +170,8 @@ export async function generateChapters(
       
     } catch (error) {
       logger.error('ChapterGenerator', `Failed to generate chapter ${i + 1}`, error)
-      // Continue with next chapter rather than failing entire story
+      // FIX 4: Fail fast - don't waste money on remaining chapters
+      throw new Error(`Chapter ${i + 1} generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
   
@@ -338,6 +339,9 @@ function buildChapterUserPrompt(
 Objective: ${spec.coreObjective}
 Main obstacle: ${spec.mainObstacle}
 Emotional focus: ${spec.dominantEmotion} (with ${spec.secondaryEmotion})
+
+FIX 3 - EMOTIONAL MICRO-BEATS: Vary the emotional texture within this chapter. Include at least one moment of humor or lightness, one moment of tension or urgency, and one quiet reflective beat where a character processes what's happening. Don't let the entire chapter sit at one emotional tone — kids need rhythm and variation to stay engaged.
+
 Scene type: ${spec.sceneType}
 WORD COUNT REQUIREMENT: Write ${spec.targetWordCount.target} words (minimum ${spec.targetWordCount.min}, maximum ${spec.targetWordCount.max}). This is enforced — chapters outside this range will be rejected.
 ${previousContext}

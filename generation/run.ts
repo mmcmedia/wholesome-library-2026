@@ -12,6 +12,18 @@ import { runPipeline } from './pipeline';
 import { getNextBrief, autoGenerateBriefs } from './lib/brief-manager';
 import { PipelineLogger, generateRunId } from './utils/logger';
 
+// FIX 5: Global error handlers
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ UNHANDLED PROMISE REJECTION:', reason);
+  console.error('Promise:', promise);
+  process.exit(1);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('❌ UNCAUGHT EXCEPTION:', error);
+  process.exit(1);
+});
+
 async function main() {
   const logger = new PipelineLogger(generateRunId());
   
@@ -56,4 +68,9 @@ async function main() {
   }
 }
 
-main();
+// FIX 5: Add catch handler to main() call
+main()
+  .catch((error) => {
+    console.error('❌ FATAL UNHANDLED ERROR IN MAIN:', error);
+    process.exit(1);
+  });
