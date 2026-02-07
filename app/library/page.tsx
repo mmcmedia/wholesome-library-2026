@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Search, SlidersHorizontal } from 'lucide-react'
+import { trackEvent, trackFilterUsage } from '@/lib/analytics'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -21,6 +22,30 @@ export default function LibraryPage() {
   const [selectedGenre, setSelectedGenre] = useState<string>('all')
   const [selectedVirtue, setSelectedVirtue] = useState<string>('all')
   const [showFilters, setShowFilters] = useState(false)
+
+  // Track library browse on mount
+  useEffect(() => {
+    trackEvent('library_browse')
+  }, [])
+
+  // Track filter usage when filters change
+  useEffect(() => {
+    if (selectedLevel !== 'all') {
+      trackFilterUsage('level', selectedLevel)
+    }
+  }, [selectedLevel])
+
+  useEffect(() => {
+    if (selectedGenre !== 'all') {
+      trackFilterUsage('genre', selectedGenre)
+    }
+  }, [selectedGenre])
+
+  useEffect(() => {
+    if (selectedVirtue !== 'all') {
+      trackFilterUsage('virtue', selectedVirtue)
+    }
+  }, [selectedVirtue])
 
   // Get unique genres and virtues from mock data
   const genres = ['All', ...Array.from(new Set(mockStories.map(s => s.genre)))]

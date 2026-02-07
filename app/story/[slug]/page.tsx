@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { trackEvent, trackReadingProgress } from '@/lib/analytics'
 import {
   ChevronLeft,
   ChevronRight,
@@ -38,6 +39,35 @@ export default function StoryReaderPage() {
   const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large'>('medium')
   const [darkMode, setDarkMode] = useState(false)
   const [showChapterList, setShowChapterList] = useState(false)
+
+  // Track story started on mount
+  useEffect(() => {
+    if (story) {
+      trackEvent('story_started', {
+        storyId: story.id,
+        storyTitle: story.title,
+        storyGenre: story.genre,
+        storyVirtue: story.primaryVirtue,
+        readingLevel: story.readingLevel,
+      })
+    }
+  }, [story])
+
+  // Track chapter completion when chapter changes
+  useEffect(() => {
+    if (story && currentChapter > 0) {
+      trackReadingProgress(
+        story.id,
+        story.title,
+        currentChapter,
+        chapters.length,
+        {
+          storyGenre: story.genre,
+          readingLevel: story.readingLevel,
+        }
+      )
+    }
+  }, [currentChapter, story, chapters.length])
 
   if (!story || chapters.length === 0) {
     return (

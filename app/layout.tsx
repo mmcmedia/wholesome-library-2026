@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next'
 import { Poppins } from 'next/font/google'
 import Navbar from '@/components/layout/navbar'
 import Footer from '@/components/layout/footer'
+import SkipNav from '@/components/ui/skip-nav'
 import { Toaster } from '@/components/ui/sonner'
 
 const poppins = Poppins({
@@ -13,9 +14,43 @@ const poppins = Poppins({
 })
 
 export const metadata: Metadata = {
-  title: 'Wholesome Library - Curated Children\'s Stories',
-  description: 'A digital library of wholesome, character-building stories for children ages 4-12. Every story is quality-reviewed and values-aligned.',
-  keywords: ['children\'s stories', 'wholesome content', 'kids reading', 'character education', 'family-friendly'],
+  title: 'Wholesome Library — Safe, Curated Stories for Kids',
+  description: 'A growing library of quality-reviewed children\'s stories that parents can trust. Filtered by values, organized by reading level. No surprises, just great stories.',
+  keywords: [
+    'wholesome stories for kids',
+    'safe children\'s stories',
+    'age-appropriate stories',
+    'christian children\'s stories online',
+    'kids reading',
+    'character education',
+    'family-friendly stories',
+    'bedtime stories',
+    'virtue stories for kids',
+  ],
+  authors: [{ name: 'Wholesome Library' }],
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://wholesomelibrary.com',
+    siteName: 'Wholesome Library',
+    title: 'Wholesome Library — Safe, Curated Stories for Kids',
+    description: 'A growing library of quality-reviewed children\'s stories that parents can trust. Filtered by values, organized by reading level. No surprises, just great stories.',
+    images: [
+      {
+        url: '/og-image.png', // TODO: Add actual OG image
+        width: 1200,
+        height: 630,
+        alt: 'Wholesome Library - Safe Stories for Kids',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Wholesome Library — Safe, Curated Stories for Kids',
+    description: 'A growing library of quality-reviewed children\'s stories that parents can trust.',
+    images: ['/og-image.png'], // TODO: Add actual Twitter card image
+  },
+  metadataBase: new URL('https://wholesomelibrary.com'), // Update with actual domain
 }
 
 export const viewport: Viewport = {
