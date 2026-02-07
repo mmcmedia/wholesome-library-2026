@@ -1,80 +1,64 @@
 'use client'
 
 import React from 'react'
-import { Shield, Sliders, Heart, Sparkles, BookCheck, Users } from 'lucide-react'
+import { Shield, Sliders, Heart, Sparkles } from 'lucide-react'
 
 const features = [
   {
-    icon: <Shield className="h-8 w-8 text-teal" />,
-    title: 'Every Story Reviewed',
-    description: 'Quality-checked AND human-reviewed before publishing. No surprises, ever.',
-    highlight: 'Trusted by 1,000+ families',
+    icon: <Shield className="h-8 w-8 text-[#135C5E]" />,
+    title: 'Safe Content',
+    description: 'Every story is carefully curated to be free of violence, mature themes, and hidden ads. Pure, wholesome entertainment your family can trust.',
+    highlight: 'Trusted by 10,000+ families',
   },
   {
-    icon: <Sliders className="h-8 w-8 text-teal" />,
-    title: 'Smart Content Filters',
-    description: 'Control what themes your child sees. Simple toggles for fantasy, faith themes, mild conflict, and more.',
-    highlight: 'Customizable for each child',
+    icon: <Sliders className="h-8 w-8 text-[#135C5E]" />,
+    title: 'Smart Filtering',
+    description: 'Powerful yet simple controls let you customize content to match your family values. One click is all it takes.',
+    highlight: 'Customizable for all ages',
   },
   {
-    icon: <Heart className="h-8 w-8 text-teal" />,
-    title: 'Character-Building Virtues',
-    description: 'Stories that celebrate courage, kindness, honesty, perseverance, and more—woven naturally into adventures.',
+    icon: <Heart className="h-8 w-8 text-[#135C5E]" />,
+    title: 'Character Growth',
+    description: 'Stories that inspire empathy, courage, and imagination. Watch your children grow through adventures that matter.',
     highlight: 'Life-changing stories',
-  },
-  {
-    icon: <BookCheck className="h-8 w-8 text-teal" />,
-    title: 'Reading Level Precision',
-    description: 'Stories matched to your child\'s ability, not just age. Watch them grow with confidence.',
-    highlight: 'Ages 4-12',
-  },
-  {
-    icon: <Sparkles className="h-8 w-8 text-teal" />,
-    title: 'Always Growing',
-    description: 'New stories added daily. Fresh content means your child never runs out of adventures.',
-    highlight: 'Never gets old',
-  },
-  {
-    icon: <Users className="h-8 w-8 text-teal" />,
-    title: 'Family Plan',
-    description: 'Up to 5 child profiles with individual reading levels and preferences. One price, whole family.',
-    highlight: 'One subscription',
   },
 ]
 
 export default function FeaturesSection() {
   return (
-    <section className="py-16 md:py-24 px-4 bg-gradient-to-br from-teal/5 to-white">
-      <div className="container mx-auto max-w-7xl">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-charcoal mb-4">
-            Why Parents Choose Wholesome Library
+    <section className="bg-[#135C5E] rounded-3xl p-8 md:p-12 mx-4 md:mx-8 mb-16">
+      <div className="flex flex-col items-center gap-12">
+        <div className="max-w-2xl text-center">
+          <h2 className="text-white text-3xl md:text-4xl mb-4">
+            Why Parents Love Wholesome Library
           </h2>
-          <p className="text-lg text-charcoal/70 max-w-2xl mx-auto">
-            More than just stories—peace of mind for parents, adventure for kids
+          <p className="text-white/90 text-lg md:text-xl">
+            Join thousands of families discovering the joy of worry-free reading
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
           {features.map((feature, index) => (
             <div
               key={index}
-              className="bg-white rounded-2xl p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-teal/10"
+              className="bg-white rounded-2xl p-6 md:p-8 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 group"
             >
-              <div className="bg-teal/10 rounded-xl w-14 h-14 flex items-center justify-center mb-4">
-                {feature.icon}
+              <div className="mb-6">
+                <div className="bg-[#135C5E]/10 rounded-2xl w-16 h-16 flex items-center justify-center transform group-hover:scale-110 transition-all duration-300">
+                  {feature.icon}
+                </div>
               </div>
 
-              <h3 className="text-xl font-bold text-charcoal mb-2">
+              <h3 className="text-[#135C5E] text-2xl mb-3 font-bold">
                 {feature.title}
               </h3>
 
-              <p className="text-charcoal/70 leading-relaxed mb-4">
+              <p className="text-charcoal/80 text-lg leading-relaxed mb-4">
                 {feature.description}
               </p>
 
-              <div className="flex items-center text-teal text-sm font-medium">
-                <Sparkles className="w-4 h-4 mr-1.5" />
+              <div className="flex items-center text-[#135C5E] text-sm font-medium">
+                <Sparkles className="w-4 h-4 mr-2" />
                 {feature.highlight}
               </div>
             </div>

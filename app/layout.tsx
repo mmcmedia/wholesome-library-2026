@@ -68,7 +68,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={poppins.variable}>
-      <body className="min-h-screen flex flex-col">
+      <body className={`${poppins.className} min-h-screen flex flex-col`}>
         <SkipNav />
         <Navbar />
         <main id="main-content" className="flex-1 pt-16" tabIndex={-1}>

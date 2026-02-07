@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
           .from('profiles')
           .update({
             subscription_status: status,
-            subscription_period_end: currentPeriodEnd.toISOString(),
+            subscription_period_end: currentPeriodEnd?.toISOString(),
             cancel_at_period_end: cancelAtPeriodEnd,
             updated_at: new Date().toISOString(),
           })

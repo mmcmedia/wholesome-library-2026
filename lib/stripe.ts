@@ -97,11 +97,58 @@ export async function createBillingPortalSession({
   }
 }
 
+// Type definitions for webhook event data
+type CheckoutCompletedData = {
+  type: 'checkout_completed'
+  userId?: string | null
+  customerId: string
+  subscriptionId: string
+  plan?: string
+}
+
+type SubscriptionUpdatedData = {
+  type: 'subscription_updated'
+  userId?: string
+  customerId: string
+  subscriptionId: string
+  status: Stripe.Subscription.Status
+  currentPeriodEnd: Date
+  cancelAtPeriodEnd: boolean
+}
+
+type SubscriptionDeletedData = {
+  type: 'subscription_deleted'
+  userId?: string
+  customerId: string
+  subscriptionId: string
+}
+
+type PaymentSucceededData = {
+  type: 'payment_succeeded'
+  customerId: string
+  subscriptionId: string
+  amountPaid: number
+}
+
+type PaymentFailedData = {
+  type: 'payment_failed'
+  customerId: string
+  subscriptionId: string | null
+  error: string
+}
+
+type WebhookEventData = 
+  | CheckoutCompletedData 
+  | SubscriptionUpdatedData 
+  | SubscriptionDeletedData 
+  | PaymentSucceededData 
+  | PaymentFailedData
+
 /**
  * Handle Stripe webhook events
  * Called from the webhook route to process subscription events
  */
-export async function handleWebhookEvent(event: Stripe.Event) {
+export async function handleWebhookEvent(event: Stripe.Event): Promise<WebhookEventData | null> {
   switch (event.type) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session;

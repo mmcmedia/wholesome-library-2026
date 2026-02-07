@@ -10,8 +10,8 @@ export async function pauseSubscriptionAction(userId: string, pauseDays: number 
   return await pauseSubscription(userId, pauseDays)
 }
 
-export async function cancelSubscriptionAction(userId: string, reason?: string, feedback?: string) {
-  return await cancelSubscription(userId, reason, feedback)
+export async function cancelSubscriptionAction(userId: string, reasons?: string[], feedback?: string) {
+  return await cancelSubscription(userId, reasons, feedback)
 }
 
 export async function getSubscriptionStatusAction(userId: string) {

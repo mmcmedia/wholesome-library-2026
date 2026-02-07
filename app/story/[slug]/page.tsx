@@ -1,58 +1,42 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { trackEvent, trackReadingProgress } from '@/lib/analytics'
-import {
-  ChevronLeft,
-  ChevronRight,
-  BookOpen,
-  Moon,
-  Sun,
-  Type,
-  Menu,
-  X,
-  ThumbsUp,
-  ThumbsDown,
-  Flag,
-} from 'lucide-react'
+import { ChevronLeft, ChevronRight, Flag } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet'
+import { trackEvent, trackReadingProgress } from '@/lib/analytics'
 import { getMockStory, getMockChapters } from '@/lib/mock-data'
+import { ReaderThemeProvider, useReaderTheme, THEMES, FONT_SIZES } from '@/components/reader/ReaderThemeProvider'
+import { ReaderToolbar } from '@/components/reader/ReaderToolbar'
+import { ChapterContent } from '@/components/reader/ChapterContent'
+import { ReaderProgress } from '@/components/reader/ReaderProgress'
+import { CompletionScreen } from '@/components/reader/CompletionScreen'
+import { cn } from '@/lib/utils'
 
-/**
- * Announce message to screen readers
- */
-function announceToScreenReader(message: string) {
-  const announcer = document.getElementById('screen-reader-announcements')
-  if (announcer) {
-    announcer.textContent = message
-    // Clear after a delay so it can be re-announced
-    setTimeout(() => {
-      announcer.textContent = ''
-    }, 1000)
-  }
-}
-
-export default function StoryReaderPage() {
+function StoryReaderContent() {
   const params = useParams()
   const router = useRouter()
   const slug = params.slug as string
+  const { preferences } = useReaderTheme()
 
   const story = getMockStory(slug)
   const chapters = getMockChapters(story?.id || '')
 
   const [currentChapter, setCurrentChapter] = useState(0)
-  const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large'>('medium')
-  const [darkMode, setDarkMode] = useState(false)
-  const [showChapterList, setShowChapterList] = useState(false)
+  const [startTime] = useState(Date.now())
+  const [showCompletion, setShowCompletion] = useState(false)
+  const [reducedMotion, setReducedMotion] = useState(false)
+
+  // Check for prefers-reduced-motion
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    setReducedMotion(mediaQuery.matches)
+    
+    const handleChange = () => setReducedMotion(mediaQuery.matches)
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
+  }, [])
 
   // Track story started on mount
   useEffect(() => {
@@ -83,6 +67,62 @@ export default function StoryReaderPage() {
     }
   }, [currentChapter, story, chapters.length])
 
+  // Show completion screen when reaching last chapter
+  useEffect(() => {
+    if (currentChapter === chapters.length - 1 && chapters.length > 0) {
+      // Delay showing completion screen until user scrolls to bottom or clicks next
+      setShowCompletion(false)
+    }
+  }, [currentChapter, chapters.length])
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft' && currentChapter > 0) {
+        e.preventDefault()
+        handlePrevChapter()
+      } else if (e.key === 'ArrowRight' && currentChapter < chapters.length - 1) {
+        e.preventDefault()
+        handleNextChapter()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [currentChapter, chapters.length])
+
+  // Touch/swipe gestures for mobile
+  useEffect(() => {
+    let touchStartX = 0
+    let touchEndX = 0
+
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartX = e.changedTouches[0].screenX
+    }
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      touchEndX = e.changedTouches[0].screenX
+      handleSwipe()
+    }
+
+    const handleSwipe = () => {
+      const swipeThreshold = 75
+      if (touchEndX < touchStartX - swipeThreshold && currentChapter < chapters.length - 1) {
+        handleNextChapter()
+      } else if (touchEndX > touchStartX + swipeThreshold && currentChapter > 0) {
+        handlePrevChapter()
+      }
+    }
+
+    document.addEventListener('touchstart', handleTouchStart)
+    document.addEventListener('touchend', handleTouchEnd)
+
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStart)
+      document.removeEventListener('touchend', handleTouchEnd)
+    }
+  }, [currentChapter, chapters.length])
+
   if (!story || chapters.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -100,72 +140,73 @@ export default function StoryReaderPage() {
   const isFirstChapter = currentChapter === 0
   const isLastChapter = currentChapter === chapters.length - 1
 
-  const fontSizeClasses = {
-    small: 'text-base md:text-lg',
-    medium: 'text-lg md:text-xl',
-    large: 'text-xl md:text-2xl',
-  }
-
-  const bgClass = darkMode ? 'bg-charcoal' : 'bg-white'
-  const textClass = darkMode ? 'text-white/90' : 'text-charcoal'
-  const mutedTextClass = darkMode ? 'text-white/60' : 'text-charcoal/60'
-
-  const handlePrevChapter = () => {
-    if (!isFirstChapter) {
+  const handlePrevChapter = useCallback(() => {
+    if (currentChapter > 0) {
       setCurrentChapter(currentChapter - 1)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-      // Announce chapter change to screen readers
-      announceToScreenReader(`Chapter ${currentChapter}: ${chapters[currentChapter - 1]?.title}`)
+      window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' })
     }
-  }
+  }, [currentChapter, reducedMotion])
 
-  const handleNextChapter = () => {
-    if (!isLastChapter) {
+  const handleNextChapter = useCallback(() => {
+    if (currentChapter < chapters.length - 1) {
       setCurrentChapter(currentChapter + 1)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-      // Announce chapter change to screen readers
-      announceToScreenReader(`Chapter ${currentChapter + 2}: ${chapters[currentChapter + 1]?.title}`)
+      window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' })
+    } else if (isLastChapter && !showCompletion) {
+      // Show completion screen
+      setShowCompletion(true)
+      const readingTimeMinutes = Math.round((Date.now() - startTime) / 1000 / 60)
+      trackEvent('story_completed', {
+        storyId: story.id,
+        storyTitle: story.title,
+        readingTimeMinutes,
+      })
     }
-  }
-
-  const changeFontSize = () => {
-    const sizes: Array<'small' | 'medium' | 'large'> = ['small', 'medium', 'large']
-    const currentIndex = sizes.indexOf(fontSize)
-    const newSize = sizes[(currentIndex + 1) % sizes.length]
-    setFontSize(newSize)
-    announceToScreenReader(`Font size changed to ${newSize}`)
-  }
-
-  // Keyboard shortcuts for navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Arrow keys for chapter navigation
-      if (e.key === 'ArrowLeft' && !isFirstChapter) {
-        e.preventDefault()
-        handlePrevChapter()
-      } else if (e.key === 'ArrowRight' && !isLastChapter) {
-        e.preventDefault()
-        handleNextChapter()
-      }
-      // +/- for font size
-      else if (e.key === '+' || e.key === '=') {
-        e.preventDefault()
-        changeFontSize()
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [currentChapter, isFirstChapter, isLastChapter, fontSize])
+  }, [currentChapter, chapters.length, isLastChapter, showCompletion, story, startTime])
 
   const handleChapterSelect = (index: number) => {
     setCurrentChapter(index)
-    setShowChapterList(false)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' })
   }
 
+  // Calculate estimated time remaining
+  const wordsRemaining = chapters
+    .slice(currentChapter + 1)
+    .reduce((sum, ch) => sum + ch.wordCount, 0)
+  const estimatedMinutesRemaining = Math.ceil(wordsRemaining / 200) // Assuming 200 words per minute
+
+  // Get theme values
+  const currentTheme = THEMES[preferences.theme]
+  const currentFontSize = FONT_SIZES[preferences.fontSize]
+
+  // Get story recommendations (mock for now)
+  const recommendations = [
+    getMockStory('the-secret-garden-club'),
+    getMockStory('the-dragon-who-couldnt-fly'),
+    getMockStory('the-kindness-ripple'),
+  ].filter(Boolean) as any[]
+
+  const readingTimeMinutes = Math.round((Date.now() - startTime) / 1000 / 60)
+
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${bgClass}`}>
+    <div
+      className={cn(
+        'min-h-screen transition-colors',
+        reducedMotion ? '' : 'duration-300'
+      )}
+      style={
+        {
+          backgroundColor: currentTheme.bg,
+          color: currentTheme.text,
+          '--theme-bg': currentTheme.bg,
+          '--theme-text': currentTheme.text,
+          '--theme-muted': currentTheme.muted,
+          '--theme-border': currentTheme.border,
+          '--toolbar-bg': currentTheme.toolbar,
+          '--line-height': currentFontSize.lineHeight,
+          fontSize: currentFontSize.base,
+        } as React.CSSProperties
+      }
+    >
       {/* Screen reader announcements */}
       <div
         role="status"
@@ -175,100 +216,27 @@ export default function StoryReaderPage() {
         id="screen-reader-announcements"
       />
 
-      {/* Header with Controls */}
-      <div className={`sticky top-16 z-40 border-b ${darkMode ? 'border-white/10 bg-charcoal' : 'border-charcoal/10 bg-white'} shadow-sm`}>
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between max-w-4xl">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push('/library')}
-            className={darkMode ? 'text-white hover:text-white/80' : ''}
-          >
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Library
-          </Button>
+      {/* Floating Toolbar */}
+      <ReaderToolbar
+        chapters={chapters.map((ch, idx) => ({
+          id: ch.id,
+          chapterNumber: ch.chapterNumber,
+          title: ch.title,
+          wordCount: ch.wordCount,
+        }))}
+        currentChapter={currentChapter}
+        onChapterSelect={handleChapterSelect}
+      />
 
-          <div className="flex items-center gap-2">
-            {/* Font Size */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                const sizes: Array<'small' | 'medium' | 'large'> = ['small', 'medium', 'large']
-                const currentIndex = sizes.indexOf(fontSize)
-                setFontSize(sizes[(currentIndex + 1) % sizes.length])
-              }}
-              className={darkMode ? 'text-white hover:text-white/80' : ''}
-              title="Change font size"
+      {/* Main Content */}
+      <div className="container mx-auto px-6 py-24 max-w-[680px]">
+        {/* Story Header (only on first chapter) */}
+        {isFirstChapter && (
+          <div className="mb-12">
+            <h1
+              className="text-4xl md:text-5xl font-bold mb-4"
+              style={{ color: currentTheme.text }}
             >
-              <Type className="h-5 w-5" />
-            </Button>
-
-            {/* Dark Mode */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setDarkMode(!darkMode)}
-              className={darkMode ? 'text-white hover:text-white/80' : ''}
-              title="Toggle dark mode"
-            >
-              {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </Button>
-
-            {/* Chapter List */}
-            <Sheet open={showChapterList} onOpenChange={setShowChapterList}>
-              <SheetTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={darkMode ? 'text-white hover:text-white/80' : ''}
-                  title="Chapters"
-                >
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent className={darkMode ? 'bg-charcoal border-white/10' : ''}>
-                <SheetHeader>
-                  <SheetTitle className={darkMode ? 'text-white' : ''}>
-                    Chapters
-                  </SheetTitle>
-                </SheetHeader>
-                <div className="mt-6 space-y-2">
-                  {chapters.map((ch, index) => (
-                    <button
-                      key={ch.id}
-                      onClick={() => handleChapterSelect(index)}
-                      className={`w-full text-left p-3 rounded-lg transition-colors ${
-                        index === currentChapter
-                          ? darkMode
-                            ? 'bg-teal/20 text-white'
-                            : 'bg-teal/10 text-teal'
-                          : darkMode
-                          ? 'hover:bg-white/5 text-white/80'
-                          : 'hover:bg-charcoal/5 text-charcoal/80'
-                      }`}
-                    >
-                      <div className="font-medium">
-                        Chapter {ch.chapterNumber}: {ch.title}
-                      </div>
-                      <div className={`text-sm ${mutedTextClass}`}>
-                        {ch.wordCount} words
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </SheetContent>
-            </Sheet>
-          </div>
-        </div>
-      </div>
-
-      {/* Story Content */}
-      <div className="container mx-auto px-4 py-8 max-w-3xl">
-        {/* Story Title (only on first chapter) */}
-        {currentChapter === 0 && (
-          <div className="mb-8">
-            <h1 className={`text-3xl md:text-4xl font-bold mb-4 ${textClass}`}>
               {story.title}
             </h1>
             <div className="flex flex-wrap gap-2 mb-4">
@@ -277,102 +245,89 @@ export default function StoryReaderPage() {
               <Badge variant="outline">{story.chapterCount} Chapters</Badge>
               <Badge variant="outline">{story.estimatedReadMinutes} min read</Badge>
             </div>
-            <p className={`text-lg ${mutedTextClass} italic`}>
+            <p
+              className="text-lg italic leading-relaxed"
+              style={{ color: currentTheme.muted }}
+            >
               {story.blurb}
             </p>
           </div>
         )}
 
-        {/* Chapter Title */}
-        <header className="mb-6">
-          <div className={`text-sm font-medium mb-2 ${mutedTextClass}`}>
-            Chapter {chapter.chapterNumber} of {chapters.length}
-          </div>
-          <h2 id="chapter-title" className={`text-2xl md:text-3xl font-bold ${textClass}`}>
-            {chapter.title}
-          </h2>
-        </header>
+        {/* Progress Indicator */}
+        {!isFirstChapter && (
+          <ReaderProgress
+            currentChapter={currentChapter}
+            totalChapters={chapters.length}
+            estimatedMinutesRemaining={estimatedMinutesRemaining}
+          />
+        )}
 
         {/* Chapter Content */}
-        <article
-          role="article"
-          aria-labelledby="chapter-title"
-          className={`prose prose-lg max-w-none ${fontSizeClasses[fontSize]} ${textClass} leading-relaxed`}
-          style={{ fontFamily: 'var(--font-poppins)' }}
-        >
-          {chapter.content.split('\n\n').map((paragraph, index) => (
-            <p key={index} className="mb-4">
-              {paragraph}
-            </p>
-          ))}
-        </article>
+        <ChapterContent
+          title={chapter.title}
+          content={chapter.content}
+          chapterNumber={chapter.chapterNumber}
+          isFirstChapter={isFirstChapter}
+          className={preferences.fontFamily === 'serif' ? 'font-serif' : 'font-sans'}
+        />
 
         {/* Chapter Navigation */}
-        <div className="mt-12 pt-8 border-t border-charcoal/10 flex justify-between items-center">
+        <div className="mt-12 pt-8 flex justify-between items-center" style={{ borderTop: `1px solid ${currentTheme.border}` }}>
           <Button
             onClick={handlePrevChapter}
             disabled={isFirstChapter}
             variant="outline"
-            className={darkMode ? 'border-white/20 text-white hover:bg-white/5' : ''}
+            style={{
+              borderColor: currentTheme.border,
+              color: currentTheme.text,
+            }}
           >
             <ChevronLeft className="h-4 w-4 mr-2" />
             Previous
           </Button>
 
-          <div className={`text-sm ${mutedTextClass}`}>
+          <div className="text-sm" style={{ color: currentTheme.muted }}>
             Chapter {currentChapter + 1} of {chapters.length}
           </div>
 
           <Button
             onClick={handleNextChapter}
-            disabled={isLastChapter}
             className="bg-teal hover:bg-teal/90 text-white"
           >
-            {isLastChapter ? 'Finish' : 'Next'}
+            {isLastChapter ? (showCompletion ? 'Finish' : 'Complete') : 'Next'}
             {!isLastChapter && <ChevronRight className="h-4 w-4 ml-2" />}
           </Button>
         </div>
 
-        {/* End-of-Story Actions */}
-        {isLastChapter && (
-          <div className={`mt-8 p-6 rounded-xl border ${darkMode ? 'border-white/10 bg-white/5' : 'border-teal/20 bg-teal/5'}`}>
-            <h3 className={`text-xl font-bold mb-4 ${textClass}`}>
-              You finished "{story.title}"! 🎉
-            </h3>
-            <p className={`mb-6 ${mutedTextClass}`}>
-              Was this story at the right level for your child?
-            </p>
-            <div className="flex gap-4 mb-6">
-              <Button variant="outline" className="gap-2">
-                <ThumbsDown className="h-4 w-4" />
-                Too Hard
-              </Button>
-              <Button variant="outline" className="gap-2">
-                <ThumbsUp className="h-4 w-4" />
-                Just Right
-              </Button>
-              <Button variant="outline" className="gap-2">
-                <ThumbsUp className="h-4 w-4" />
-                Too Easy
-              </Button>
-            </div>
-            <Button
-              onClick={() => router.push('/library')}
-              className="w-full bg-teal hover:bg-teal/90 text-white"
-            >
-              Find More Stories
-            </Button>
-          </div>
+        {/* Completion Screen */}
+        {isLastChapter && showCompletion && (
+          <CompletionScreen
+            storyId={story.id}
+            storyTitle={story.title}
+            readingTimeMinutes={readingTimeMinutes}
+            recommendations={recommendations}
+          />
         )}
 
         {/* Report Problem */}
-        <div className="mt-6 text-center">
-          <Button variant="ghost" size="sm" className={mutedTextClass}>
-            <Flag className="h-4 w-4 mr-2" />
-            Report a Problem
-          </Button>
-        </div>
+        {!showCompletion && (
+          <div className="mt-6 text-center">
+            <Button variant="ghost" size="sm" style={{ color: currentTheme.muted }}>
+              <Flag className="h-4 w-4 mr-2" />
+              Report a Problem
+            </Button>
+          </div>
+        )}
       </div>
     </div>
+  )
+}
+
+export default function StoryReaderPage() {
+  return (
+    <ReaderThemeProvider>
+      <StoryReaderContent />
+    </ReaderThemeProvider>
   )
 }

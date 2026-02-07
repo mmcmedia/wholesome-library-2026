@@ -8,21 +8,12 @@ import { BookOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function SignupPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [childName, setChildName] = useState('')
-  const [readingLevel, setReadingLevel] = useState('')
   const [loading, setLoading] = useState(false)
 
   // Track signup started on mount
@@ -38,16 +29,10 @@ export default function SignupPage() {
     // For now, just simulate signup
     setTimeout(() => {
       // Track successful signup
-      trackEvent('signup_completed', {
-        readingLevel,
-      })
+      trackEvent('signup_completed')
       
-      // Track child added
-      trackEvent('child_added', {
-        readingLevel,
-      })
-      
-      router.push('/library')
+      // Redirect to onboarding flow
+      router.push('/onboarding')
     }, 1000)
   }
 
@@ -93,41 +78,6 @@ export default function SignupPage() {
                 required
                 minLength={8}
               />
-            </div>
-
-            {/* Child Name */}
-            <div className="space-y-2">
-              <Label htmlFor="childName">Child's First Name</Label>
-              <Input
-                id="childName"
-                type="text"
-                placeholder="e.g., Emma"
-                value={childName}
-                onChange={(e) => setChildName(e.target.value)}
-                required
-              />
-              <p className="text-xs text-charcoal/60">
-                You can add more children later
-              </p>
-            </div>
-
-            {/* Reading Level */}
-            <div className="space-y-2">
-              <Label htmlFor="readingLevel">Reading Level</Label>
-              <Select value={readingLevel} onValueChange={setReadingLevel} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose level..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="early">Early Reader (Ages 4-6)</SelectItem>
-                  <SelectItem value="independent">Independent (Ages 7-8)</SelectItem>
-                  <SelectItem value="confident">Confident (Ages 9-10)</SelectItem>
-                  <SelectItem value="advanced">Advanced (Ages 11-12)</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-charcoal/60">
-                Not sure? <Link href="#" className="text-teal hover:underline">Take our quick 30-second quiz</Link>
-              </p>
             </div>
 
             {/* Submit Button */}

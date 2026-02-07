@@ -28,7 +28,7 @@ const levelLabels = {
 export default function StoryCard({ story }: StoryCardProps) {
   return (
     <Link href={`/story/${story.slug}`} aria-label={`Read ${story.title}, a ${story.genre} story about ${story.primaryVirtue}`}>
-      <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer h-full">
+      <Card className="group overflow-hidden rounded-2xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 cursor-pointer h-full">
         <div className="aspect-[3/4] relative overflow-hidden bg-gradient-to-br from-teal/20 to-teal/5">
           {story.coverImageUrl ? (
             <img

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Search, SlidersHorizontal } from 'lucide-react'
+import { Search, SlidersHorizontal, BookOpen, X } from 'lucide-react'
 import { trackEvent, trackFilterUsage } from '@/lib/analytics'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -13,8 +13,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetClose,
+} from '@/components/ui/sheet'
 import StoryCard from '@/components/library/story-card'
 import { mockStories } from '@/lib/mock-data'
+import { EmptyState } from '@/components/ui/empty-state'
+import { FadeIn } from '@/components/ui/fade-in'
 
 export default function LibraryPage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -68,17 +78,20 @@ export default function LibraryPage() {
     <div className="min-h-screen bg-gradient-to-br from-teal/5 to-white">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
-        <header className="mb-8">
+        <FadeIn>
+          <header className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-charcoal mb-2">
             Browse Our Library
           </h1>
           <p className="text-charcoal/70 text-lg">
             {filteredStories.length} wholesome {filteredStories.length === 1 ? 'story' : 'stories'} waiting for your family
           </p>
-        </header>
+          </header>
+        </FadeIn>
 
         {/* Search and Filters */}
-        <section aria-label="Search and filter stories" className="mb-8 space-y-4">
+        <FadeIn delay={100}>
+          <section aria-label="Search and filter stories" className="mb-8 space-y-4">
           <div className="flex gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-charcoal/40" aria-hidden="true" />
@@ -112,7 +125,7 @@ export default function LibraryPage() {
           {/* Filter Controls */}
           {showFilters && (
             <div 
-              className="bg-white rounded-xl p-6 shadow-md border border-teal/10 grid grid-cols-1 md:grid-cols-3 gap-4"
+              className="bg-white rounded-xl p-6 shadow-md border border-teal/10 grid grid-cols-1 md:grid-cols-3 gap-4 animate-slide-up"
               role="region"
               aria-label="Story filters"
             >
@@ -187,7 +200,8 @@ export default function LibraryPage() {
               )}
             </div>
           )}
-        </section>
+          </section>
+        </FadeIn>
 
         {/* Story Grid */}
         {filteredStories.length > 0 ? (
@@ -196,27 +210,27 @@ export default function LibraryPage() {
             aria-label="Story library"
             role="region"
           >
-            {filteredStories.map((story) => (
-              <StoryCard key={story.id} story={story} />
+            {filteredStories.map((story, index) => (
+              <FadeIn key={story.id} delay={index * 50} duration={400}>
+                <StoryCard story={story} />
+              </FadeIn>
             ))}
           </section>
         ) : (
-          <div className="text-center py-16">
-            <p className="text-xl text-charcoal/60 mb-4">
-              No stories found matching your filters
-            </p>
-            <Button
-              variant="outline"
-              onClick={() => {
+          <EmptyState
+            icon={<BookOpen className="w-16 h-16" />}
+            title="No stories match your filters"
+            description="Try adjusting your filters or clearing them to see more stories."
+            action={{
+              label: 'Clear All Filters',
+              onClick: () => {
                 setSearchQuery('')
                 setSelectedLevel('all')
                 setSelectedGenre('all')
                 setSelectedVirtue('all')
-              }}
-            >
-              Clear all filters
-            </Button>
-          </div>
+              },
+            }}
+          />
         )}
       </div>
     </div>
