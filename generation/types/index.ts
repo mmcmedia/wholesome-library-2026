@@ -28,6 +28,7 @@ export interface StoryBrief {
 
 /**
  * Story DNA - Enhanced 3-stage structure (foundation, characters, chapters)
+ * with V3 continuity tracking
  */
 export interface StoryDNA {
   version: string
@@ -55,6 +56,8 @@ export interface StoryDNA {
     ruleConsequences: {
       [key: string]: string
     }
+    culturalQuirks?: string[]
+    previousFailures?: string
     [key: string]: any
   }
   plotStructure: {
@@ -63,47 +66,21 @@ export interface StoryDNA {
     storyQuestion: string
     resolution: string
     conflictReversalPlan: {
-      [key: string]: {
-        chapter: number
-        description: string
-      }
+      incitingIncident?: { chapter: number; description: string }
+      falseVictory?: { chapter: number; description: string }
+      majorReversal?: { chapter: number; description: string }
+      darkestMoment?: { chapter: number; description: string }
+      finalRevelation?: { chapter: number; description: string }
+      [key: string]: { chapter: number; description: string } | undefined
     }
     [key: string]: any
   }
   characters: {
-    [characterName: string]: {
-      name: string
-      age: number
-      gender: string
-      pronouns: string
-      archetype: 'protagonist' | 'foil' | 'mentor' | 'ally' | 'rival'
-      dominantTrait: string
-      flaw: string
-      secretFear: string
-      personalGoal: string
-      growthArc: string
-      speechStyle: {
-        patterns: string[]
-        phrases: string[]
-        emotionalTells: string
-      }
-      appearance: {
-        look: string
-        body: string
-        quirk: string
-      }
-      [key: string]: any
-    }
+    [characterName: string]: CharacterProfile
   }
-  characterTensions: Array<{
-    characterPair: string[]
-    tensionType: 'value_clash' | 'hidden_jealousy' | 'misunderstanding' | 'competing_goals' | 'personality_friction'
-    tensionPoint: string
-    description: string
-    resolutionPath: string
-    triggerChapters: number[]
-  }>
+  characterTensions: CharacterTension[]
   chapterSpecs: Chapter[]
+  chapterTransitions: ChapterTransition[]
   emotionalStakes: {
     core: string
     quartiles: Array<{
@@ -116,11 +93,121 @@ export interface StoryDNA {
       failureConsequence: string
     }>
   }
+  // V3 Continuity Tracking (prevents bugs #5, #6, #7)
+  storyState: StoryState
+  continuityRules: ContinuityRules
   editorialChecklist: {
     [key: string]: boolean
   }
   hook?: string
   [key: string]: any
+}
+
+/**
+ * Character profile with speech fingerprints (prevents Bug #3 - cookie-cutter dialogue)
+ */
+export interface CharacterProfile {
+  name: string
+  age: number
+  gender: string
+  pronouns: string // LOCKED per character (prevents Bug #1)
+  archetype: 'protagonist' | 'foil' | 'mentor' | 'ally' | 'rival'
+  dominantTrait: string
+  flaw: string
+  secretFear: string
+  personalGoal: string
+  growthArc: string
+  speechStyle: {
+    patterns: string[]  // "Asks questions when nervous", "Speaks in short bursts"
+    phrases: string[]   // Unique catch phrases (NOT example dialogue!)
+    emotionalTells: string  // "Voice gets quiet when lying"
+  }
+  appearance: {
+    look: string
+    body: string
+    quirk: string
+  }
+  [key: string]: any
+}
+
+/**
+ * Character tension definition
+ */
+export interface CharacterTension {
+  characterPair: string[]
+  tensionType: 'value_clash' | 'hidden_jealousy' | 'misunderstanding' | 'competing_goals' | 'personality_friction'
+  tensionPoint: string
+  description: string
+  resolutionPath: string
+  triggerChapters: number[]
+}
+
+/**
+ * Chapter transition with knowledge updates (prevents Bug #5 - knowledge amnesia)
+ */
+export interface ChapterTransition {
+  fromChapter: number
+  toChapter: number
+  continuityNotes: string[]
+  knowledgeUpdates: CharacterKnowledgeUpdate[]
+}
+
+/**
+ * Character knowledge update (tracks what each character learns and when)
+ */
+export interface CharacterKnowledgeUpdate {
+  characterName: string
+  newKnowledge: string
+  source: 'discovery' | 'revelation' | 'deduction' | 'confession' | 'suspected' | 'observation'
+  shouldReactAs: 'shocked' | 'suspected' | 'unsurprised' | 'confused' | 'hurt' | 'ashamed' | 'excited' | 'worried' | 'angry' | 'sad' | 'relieved' | 'determined' | 'curious' | 'fearful' | 'hopeful'
+  impact: string
+}
+
+/**
+ * Story state tracking (prevents Bug #5 - knowledge amnesia)
+ */
+export interface StoryState {
+  currentChapter?: number
+  activeElements: {
+    [elementName: string]: any
+  }
+  characterKnowledge: Array<{
+    characterName: string
+    knowledgeItems: Array<{
+      fact: string
+      learnedInChapter: number
+      revealedToOthers: Array<{
+        character: string
+        inChapter: number
+        context: string
+      }>
+      isSecret: boolean
+      importance: 'low' | 'medium' | 'high' | 'critical'
+    }>
+  }>
+  pendingResolutions: Array<{
+    element: string
+    introducedInChapter: number
+    mustResolveByChapter: number
+    resolutionPlan: string
+  }>
+  usageHistory?: {
+    mistBridges?: any[]
+    secretReveals?: any[]
+    worldRuleDemonstrations?: any[]
+  }
+  recurringElements?: string[]
+  [key: string]: any
+}
+
+/**
+ * Continuity rules (strict character consistency)
+ */
+export interface ContinuityRules {
+  maxMistBridgeUses?: number
+  secretRevealSpacing?: number
+  allowRepeatedShock: boolean
+  characterConsistencyLevel: 'strict' | 'moderate' | 'flexible'
 }
 
 /**
@@ -146,7 +233,7 @@ export interface Chapter {
     max: number
     target: number
   }
-  cliffhanger: {
+  cliffhanger?: {
     type: 'discovery' | 'danger' | 'revelation' | 'decision' | 'promise'
     intensity: number
     question: string
@@ -158,9 +245,29 @@ export interface Chapter {
       openingBeat: string
     }
   }
+  continuityRequirements?: ContinuityRequirements
   content?: string
   wordCount?: number
   [key: string]: any
+}
+
+/**
+ * Continuity requirements per chapter (prevents Bug #7 - Forbidden Reactions)
+ */
+export interface ContinuityRequirements {
+  mustResolve: string[]
+  forbiddenReactions: Array<{
+    character: string
+    toEvent: string
+    reason: string
+    correctReaction: 'shocked' | 'suspected' | 'unsurprised' | 'confused' | 'hurt' | 'ashamed' | 'excited' | 'worried' | 'angry' | 'sad' | 'relieved' | 'determined' | 'curious' | 'fearful' | 'hopeful'
+  }>
+  characterKnowledgeState: Array<{
+    character: string
+    knows: string[]
+    doesNotKnow: string[]
+  }>
+  referenceElements: string[]
 }
 
 /**
@@ -245,8 +352,10 @@ export interface ValuesCheckResult {
 export interface CoverGenerationResult {
   success: boolean
   imageUrl?: string
+  localPath?: string
   taskId?: string
   fallbackTemplate?: string
+  fallbackUsed?: boolean
   timestamp: string
   error?: string
 }

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
+import { FadeIn } from '@/components/ui/fade-in'
 
 const faqs = [
   {
@@ -36,36 +37,40 @@ export default function FAQSection() {
   return (
     <section id="faq" className="py-16 md:py-24 px-4 bg-[#135C5E]/10">
       <div className="container mx-auto max-w-3xl">
-        <h2 className="text-3xl md:text-4xl font-bold text-charcoal text-center mb-12">
-          Frequently Asked Questions
-        </h2>
+        <FadeIn>
+          <h2 className="text-3xl md:text-4xl font-bold text-charcoal text-center mb-12">
+            Frequently Asked Questions
+          </h2>
+        </FadeIn>
 
         <div className="space-y-4">
           {faqs.map((faq, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-lg shadow-md overflow-hidden"
-            >
-              <button
-                className="w-full px-6 py-4 text-left flex justify-between items-center focus:outline-none"
-                onClick={() => { toggleQuestion(index) }}
-              >
-                <span className="font-medium text-lg text-charcoal">{faq.question}</span>
-                {openIndex === index
-                  ? (
-                    <ChevronUp className="w-5 h-5 text-[#135C5E]" />
-                  )
-                  : (
+            <FadeIn key={index} delay={index * 100} duration={400}>
+              <div className="bg-white rounded-2xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl">
+                <button
+                  className="w-full px-6 py-5 text-left flex justify-between items-center focus:outline-none hover:bg-teal/5 transition-colors duration-200"
+                  onClick={() => { toggleQuestion(index) }}
+                  aria-expanded={openIndex === index}
+                  aria-controls={`faq-answer-${index}`}
+                >
+                  <span className="font-medium text-lg text-charcoal pr-4">{faq.question}</span>
+                  <span className={`flex-shrink-0 transition-transform duration-300 ${openIndex === index ? 'rotate-180' : ''}`}>
                     <ChevronDown className="w-5 h-5 text-[#135C5E]" />
-                  )}
-              </button>
+                  </span>
+                </button>
 
-              {openIndex === index && (
-                <div className="px-6 pb-4 text-charcoal/80 animate-fadeIn">
-                  {faq.answer}
+                <div 
+                  id={`faq-answer-${index}`}
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    openIndex === index ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                  }`}
+                >
+                  <div className="px-6 pb-5 text-charcoal/80 leading-relaxed">
+                    {faq.answer}
+                  </div>
                 </div>
-              )}
-            </div>
+              </div>
+            </FadeIn>
           ))}
         </div>
       </div>

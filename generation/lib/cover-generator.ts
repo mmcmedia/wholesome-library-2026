@@ -43,6 +43,7 @@ export async function generateCover(
       imageUrl,
       localPath,
       fallbackUsed: false,
+      timestamp: new Date().toISOString(),
     };
   } catch (error: any) {
     logger.error('COVER_GENERATION', 'Cover generation failed', error);
@@ -186,5 +187,6 @@ function useFallbackCover(dna: StoryDNA, logger: PipelineLogger): CoverGeneratio
     success: true,
     localPath: fallbackPath,
     fallbackUsed: true,
+    timestamp: new Date().toISOString(),
   };
 }

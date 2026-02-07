@@ -5,6 +5,7 @@ import Navbar from '@/components/layout/navbar'
 import Footer from '@/components/layout/footer'
 import SkipNav from '@/components/ui/skip-nav'
 import { Toaster } from '@/components/ui/sonner'
+import { TRPCProvider } from '@/components/providers/trpc-provider'
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -69,13 +70,15 @@ export default function RootLayout({
   return (
     <html lang="en" className={poppins.variable}>
       <body className={`${poppins.className} min-h-screen flex flex-col`}>
-        <SkipNav />
-        <Navbar />
-        <main id="main-content" className="flex-1 pt-16" tabIndex={-1}>
-          {children}
-        </main>
-        <Footer />
-        <Toaster />
+        <TRPCProvider>
+          <SkipNav />
+          <Navbar />
+          <main id="main-content" className="flex-1 pt-16" tabIndex={-1}>
+            {children}
+          </main>
+          <Footer />
+          <Toaster />
+        </TRPCProvider>
       </body>
     </html>
   )

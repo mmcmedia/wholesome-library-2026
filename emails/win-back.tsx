@@ -9,7 +9,7 @@ export default function WinBackEmail({ parentName = 'Parent', newStoriesCount = 
   return (
     <Html>
       <Head />
-      <Preview>We've added {newStoriesCount} new stories — Come back for 50% off!</Preview>
+      <Preview>{`We've added ${newStoriesCount} new stories — Come back for 50% off!`}</Preview>
       <Body style={main}>
         <Container style={container}>
           <Img src="https://wholesomelibrary.com/logo.png" alt="Wholesome Library" width={150} height={50} style={logo} />

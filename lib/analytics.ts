@@ -9,6 +9,8 @@ export type AnalyticsEvent =
   | 'signup_started'
   | 'signup_completed'
   | 'child_added'
+  | 'onboarding_step_completed'
+  | 'onboarding_completed'
   // Discovery & browsing
   | 'library_browse'
   | 'filter_used'
@@ -26,6 +28,7 @@ export type AnalyticsEvent =
   // Feedback events
   | 'too_easy_clicked'
   | 'too_hard_clicked'
+  | 'story_difficulty_feedback'
 
 export interface AnalyticsProperties {
   // User context

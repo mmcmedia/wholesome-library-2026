@@ -13,7 +13,7 @@ export default function WeeklyDigestEmail({ parentName = 'Parent', childName = '
   return (
     <Html>
       <Head />
-      <Preview>{childName} read {storiesRead} stories this week! Here's what's new.</Preview>
+      <Preview>{`${childName} read ${storiesRead} stories this week! Here's what's new.`}</Preview>
       <Body style={main}>
         <Container style={container}>
           <Img src="https://wholesomelibrary.com/logo.png" alt="Wholesome Library" width={150} height={50} style={logo} />

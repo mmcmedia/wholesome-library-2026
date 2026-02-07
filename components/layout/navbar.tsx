@@ -80,45 +80,55 @@ export default function Navbar() {
         </button>
       </nav>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white shadow-lg animate-fadeIn">
-          <div className="flex flex-col space-y-4 px-4 py-6 container mx-auto">
-            <Link
-              href="/library"
-              className={`font-medium text-lg ${
-                isActive('/library')
-                  ? 'text-[#135C5E]'
-                  : 'text-charcoal/80 hover:text-[#135C5E]'
-              } transition-colors`}
-              onClick={() => { setMobileMenuOpen(false) }}
-            >
-              Stories
-            </Link>
-            <Link
-              href="/#pricing"
-              className="font-medium text-lg text-charcoal/80 hover:text-[#135C5E] transition-colors"
-              onClick={() => { setMobileMenuOpen(false) }}
-            >
-              Pricing
-            </Link>
-            <Link
-              href="/#faq"
-              className="font-medium text-lg text-charcoal/80 hover:text-[#135C5E] transition-colors"
-              onClick={() => { setMobileMenuOpen(false) }}
-            >
-              FAQ
-            </Link>
+        <>
+          {/* Backdrop */}
+          <div 
+            className="md:hidden fixed inset-0 bg-black/20 z-40 animate-fadeIn"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
+          
+          {/* Menu */}
+          <div className="md:hidden bg-white shadow-lg animate-slideDown relative z-50">
+            <div className="flex flex-col space-y-4 px-4 py-6 container mx-auto">
+              <Link
+                href="/library"
+                className={`font-medium text-lg ${
+                  isActive('/library')
+                    ? 'text-[#135C5E]'
+                    : 'text-charcoal/80 hover:text-[#135C5E]'
+                } transition-colors`}
+                onClick={() => { setMobileMenuOpen(false) }}
+              >
+                Stories
+              </Link>
+              <Link
+                href="/#pricing"
+                className="font-medium text-lg text-charcoal/80 hover:text-[#135C5E] transition-colors"
+                onClick={() => { setMobileMenuOpen(false) }}
+              >
+                Pricing
+              </Link>
+              <Link
+                href="/#faq"
+                className="font-medium text-lg text-charcoal/80 hover:text-[#135C5E] transition-colors"
+                onClick={() => { setMobileMenuOpen(false) }}
+              >
+                FAQ
+              </Link>
 
-            <Link
-              href="/auth/signup"
-              className="bg-[#135C5E] text-white font-medium text-lg py-3 px-6 rounded-full hover:bg-[#135C5E]/90 transition-colors text-center mt-4"
-              onClick={() => { setMobileMenuOpen(false) }}
-            >
-              Start Your Free 7-Day Trial
-            </Link>
+              <Link
+                href="/auth/signup"
+                className="bg-[#135C5E] text-white font-medium text-lg py-3 px-6 rounded-full hover:bg-[#135C5E]/90 transition-colors text-center mt-4"
+                onClick={() => { setMobileMenuOpen(false) }}
+              >
+                Start Your Free 7-Day Trial
+              </Link>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </header>
   )

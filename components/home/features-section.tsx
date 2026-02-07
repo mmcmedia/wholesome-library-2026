@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { Shield, Sliders, Heart, Sparkles } from 'lucide-react'
+import { FadeIn } from '@/components/ui/fade-in'
 
 const features = [
   {
@@ -26,42 +27,41 @@ const features = [
 
 export default function FeaturesSection() {
   return (
-    <section className="bg-[#135C5E] rounded-3xl p-8 md:p-12 mx-4 md:mx-8 mb-16">
+    <section className="bg-[#135C5E] rounded-3xl p-8 md:p-12 mx-4 md:mx-8 mb-16 overflow-hidden">
       <div className="flex flex-col items-center gap-12">
-        <div className="max-w-2xl text-center">
-          <h2 className="text-white text-3xl md:text-4xl mb-4">
+        <FadeIn className="max-w-2xl text-center">
+          <h2 className="text-white text-3xl md:text-4xl mb-4 font-bold">
             Why Parents Love Wholesome Library
           </h2>
-          <p className="text-white/90 text-lg md:text-xl">
+          <p className="text-white/90 text-lg md:text-xl leading-relaxed">
             Join thousands of families discovering the joy of worry-free reading
           </p>
-        </div>
+        </FadeIn>
 
         <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
           {features.map((feature, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-2xl p-6 md:p-8 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 group"
-            >
-              <div className="mb-6">
-                <div className="bg-[#135C5E]/10 rounded-2xl w-16 h-16 flex items-center justify-center transform group-hover:scale-110 transition-all duration-300">
-                  {feature.icon}
+            <FadeIn key={index} delay={100 + index * 150} duration={500}>
+              <div className="bg-white rounded-2xl p-6 md:p-8 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 group h-full">
+                <div className="mb-6">
+                  <div className="bg-[#135C5E]/10 rounded-2xl w-16 h-16 flex items-center justify-center transform group-hover:scale-110 transition-all duration-300">
+                    {feature.icon}
+                  </div>
+                </div>
+
+                <h3 className="text-[#135C5E] text-2xl mb-3 font-bold">
+                  {feature.title}
+                </h3>
+
+                <p className="text-charcoal/80 text-lg leading-relaxed mb-4">
+                  {feature.description}
+                </p>
+
+                <div className="flex items-center text-[#135C5E] text-sm font-medium">
+                  <Sparkles className="w-4 h-4 mr-2 flex-shrink-0" />
+                  {feature.highlight}
                 </div>
               </div>
-
-              <h3 className="text-[#135C5E] text-2xl mb-3 font-bold">
-                {feature.title}
-              </h3>
-
-              <p className="text-charcoal/80 text-lg leading-relaxed mb-4">
-                {feature.description}
-              </p>
-
-              <div className="flex items-center text-[#135C5E] text-sm font-medium">
-                <Sparkles className="w-4 h-4 mr-2" />
-                {feature.highlight}
-              </div>
-            </div>
+            </FadeIn>
           ))}
         </div>
       </div>

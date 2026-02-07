@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { Quote } from 'lucide-react'
+import { FadeIn } from '@/components/ui/fade-in'
 
 const testimonials = [
   {
@@ -28,30 +29,31 @@ export default function Testimonials() {
   return (
     <section className="py-16 md:py-24 px-4 bg-[#135C5E]/10">
       <div className="container mx-auto max-w-6xl">
-        <h2 className="text-3xl md:text-4xl font-bold text-charcoal text-center mb-12">
-          What Families Are Saying
-        </h2>
+        <FadeIn>
+          <h2 className="text-3xl md:text-4xl font-bold text-charcoal text-center mb-12">
+            What Families Are Saying
+          </h2>
+        </FadeIn>
 
         <div className="grid md:grid-cols-3 gap-8">
           {testimonials.map((testimonial, index) => (
-            <div
-              key={index}
-              className="bg-gradient-to-br from-[#135C5E]/20 to-[#135C5E]/5 backdrop-blur-sm rounded-xl p-6 shadow-lg relative hover:shadow-xl transition-all duration-300"
-            >
-              <Quote className="absolute top-4 right-4 text-[#135C5E]/30 h-12 w-12" />
-              <p className="text-charcoal/90 relative z-10 mb-6">"{testimonial.content}"</p>
-              <div className="flex items-center">
-                <img
-                  src={testimonial.image}
-                  alt={testimonial.author}
-                  className="w-12 h-12 rounded-full object-cover mr-3"
-                />
-                <div className="ml-2">
-                  <p className="font-medium text-charcoal">— {testimonial.author}</p>
-                  <p className="text-sm text-charcoal/70">{testimonial.role}</p>
+            <FadeIn key={index} delay={100 + index * 150} duration={500}>
+              <div className="bg-gradient-to-br from-[#135C5E]/20 to-[#135C5E]/5 backdrop-blur-sm rounded-2xl p-6 shadow-lg relative hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 h-full">
+                <Quote className="absolute top-4 right-4 text-[#135C5E]/30 h-12 w-12" />
+                <p className="text-charcoal/90 relative z-10 mb-6 leading-relaxed">"{testimonial.content}"</p>
+                <div className="flex items-center">
+                  <img
+                    src={testimonial.image}
+                    alt={testimonial.author}
+                    className="w-12 h-12 rounded-full object-cover mr-3 ring-2 ring-teal/20"
+                  />
+                  <div className="ml-2">
+                    <p className="font-medium text-charcoal">— {testimonial.author}</p>
+                    <p className="text-sm text-charcoal/70">{testimonial.role}</p>
+                  </div>
                 </div>
               </div>
-            </div>
+            </FadeIn>
           ))}
         </div>
       </div>

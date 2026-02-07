@@ -11,6 +11,7 @@ import { BookOpen, ChevronLeft, Sparkles } from 'lucide-react'
 import ReadingLevelPicker, { type ReadingLevel } from './reading-level-picker'
 import InterestPicker, { type Interest } from './interest-picker'
 import { trackEvent } from '@/lib/analytics'
+import { trpc } from '@/lib/trpc/client'
 
 interface OnboardingData {
   parentName: string
@@ -50,16 +51,24 @@ export default function OnboardingWizard({ parentEmail }: { parentEmail?: string
     setStep(step - 1)
   }
 
-  const handleComplete = () => {
-    // TODO: Save to Supabase
-    trackEvent('onboarding_completed', {
-      readingLevel: data.readingLevel,
-      interests: data.interests,
-      childAge: data.childAge,
-    })
-    
-    // Redirect to library with recommendations
-    router.push('/library?onboarding=complete')
+  const handleComplete = async () => {
+    try {
+      // TODO: Save child profile using tRPC when mutations are set up
+      // For now, just track completion and redirect
+      
+      trackEvent('onboarding_completed', {
+        readingLevel: data.readingLevel || undefined,
+        interests: data.interests,
+        childAge: data.childAge || undefined,
+      })
+      
+      // Redirect to library with recommendations
+      router.push('/library?onboarding=complete')
+    } catch (error) {
+      console.error('Failed to complete onboarding:', error)
+      // Still redirect but show error - TODO: add toast notification
+      router.push('/library?onboarding=complete')
+    }
   }
 
   const canProceedStep1 = data.parentName.trim().length > 0

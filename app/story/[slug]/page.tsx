@@ -207,6 +207,23 @@ function StoryReaderContent() {
         } as React.CSSProperties
       }
     >
+      {/* Fixed progress bar at very top */}
+      <div 
+        className="fixed top-0 left-0 right-0 h-1 z-[60] transition-all duration-300"
+        style={{
+          backgroundColor: 'rgba(19, 92, 94, 0.1)',
+        }}
+      >
+        <div
+          className="h-full transition-all duration-500 ease-out"
+          style={{
+            width: `${((currentChapter + 1) / chapters.length) * 100}%`,
+            backgroundColor: '#135C5E',
+            boxShadow: '0 0 10px rgba(19, 92, 94, 0.5)',
+          }}
+        />
+      </div>
+
       {/* Screen reader announcements */}
       <div
         role="status"

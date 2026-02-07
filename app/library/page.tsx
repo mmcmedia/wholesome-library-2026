@@ -92,23 +92,26 @@ export default function LibraryPage() {
         {/* Search and Filters */}
         <FadeIn delay={100}>
           <section aria-label="Search and filter stories" className="mb-8 space-y-4">
-          <div className="flex gap-4">
+          <div className="flex gap-3 sm:gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-charcoal/40" aria-hidden="true" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-charcoal/40" aria-hidden="true" />
               <Input
                 type="search"
                 placeholder="Search stories..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 py-6 text-lg"
+                className="pl-9 sm:pl-10 py-5 sm:py-6 text-base sm:text-lg w-full"
+                style={{ fontSize: '16px' }}
                 aria-label="Search stories by title or description"
               />
             </div>
+            
+            {/* Desktop Filter Button */}
             <Button
               variant="outline"
               size="lg"
               onClick={() => setShowFilters(!showFilters)}
-              className="gap-2"
+              className="gap-2 hidden md:flex"
               aria-label={`${showFilters ? 'Hide' : 'Show'} filters ${activeFiltersCount > 0 ? `(${activeFiltersCount} active)` : ''}`}
               aria-expanded={showFilters}
             >
@@ -120,6 +123,107 @@ export default function LibraryPage() {
                 </Badge>
               )}
             </Button>
+
+            {/* Mobile Filter Sheet */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="gap-2 md:hidden h-[44px] px-4"
+                  aria-label={`Filters ${activeFiltersCount > 0 ? `(${activeFiltersCount} active)` : ''}`}
+                >
+                  <SlidersHorizontal className="h-5 w-5" aria-hidden="true" />
+                  {activeFiltersCount > 0 && (
+                    <Badge className="ml-1" aria-label={`${activeFiltersCount} filters active`}>
+                      {activeFiltersCount}
+                    </Badge>
+                  )}
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="h-[90vh]">
+                <SheetHeader>
+                  <SheetTitle>Filter Stories</SheetTitle>
+                </SheetHeader>
+                <div className="mt-6 space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-charcoal mb-2">
+                      Reading Level
+                    </label>
+                    <Select value={selectedLevel} onValueChange={setSelectedLevel}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Levels</SelectItem>
+                        <SelectItem value="early">Early Reader (Ages 4-6)</SelectItem>
+                        <SelectItem value="independent">Independent (Ages 7-8)</SelectItem>
+                        <SelectItem value="confident">Confident (Ages 9-10)</SelectItem>
+                        <SelectItem value="advanced">Advanced (Ages 11-12)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-charcoal mb-2">
+                      Genre
+                    </label>
+                    <Select value={selectedGenre} onValueChange={setSelectedGenre}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {genres.map((genre) => (
+                          <SelectItem key={genre} value={genre === 'All' ? 'all' : genre}>
+                            {genre}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-charcoal mb-2">
+                      Primary Virtue
+                    </label>
+                    <Select value={selectedVirtue} onValueChange={setSelectedVirtue}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {virtues.map((virtue) => (
+                          <SelectItem key={virtue} value={virtue === 'All' ? 'all' : virtue}>
+                            {virtue}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {activeFiltersCount > 0 && (
+                    <SheetClose asChild>
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setSelectedLevel('all')
+                          setSelectedGenre('all')
+                          setSelectedVirtue('all')
+                        }}
+                        className="w-full text-teal hover:text-teal/80"
+                      >
+                        Clear all filters
+                      </Button>
+                    </SheetClose>
+                  )}
+
+                  <SheetClose asChild>
+                    <Button className="w-full bg-teal hover:bg-teal/90 h-12">
+                      Apply Filters
+                    </Button>
+                  </SheetClose>
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
 
           {/* Filter Controls */}

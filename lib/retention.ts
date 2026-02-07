@@ -83,7 +83,12 @@ export async function getRetentionMetrics(userId: string) {
       totalMinutesRead: Number(readingStats[0]?.totalMinutes || 0),
       readingStreak: readingStreak,
       childrenCount: userChildren.length,
-      mostRecentRead: mostRecent[0] || null,
+      mostRecentRead: mostRecent[0] 
+        ? {
+            title: mostRecent[0].title,
+            completedAt: mostRecent[0].completedAt?.toISOString() || null,
+          }
+        : null,
     };
   } catch (error) {
     console.error('Error getting retention metrics:', error);

@@ -1,5 +1,8 @@
 import { router, publicProcedure } from '../init';
 import { z } from 'zod';
+import { db } from '@/lib/db';
+import { stories, chapters } from '@/lib/db/schema';
+import { eq, and, desc, sql } from 'drizzle-orm';
 
 export const storiesRouter = router({
   listPublished: publicProcedure
@@ -11,10 +14,39 @@ export const storiesRouter = router({
       offset: z.number().min(0).default(0),
     }))
     .query(async ({ ctx, input }) => {
-      // TODO: Implement with Drizzle query
+      // Build where conditions
+      const conditions = [eq(stories.status, 'published')];
+      
+      if (input.readingLevel) {
+        conditions.push(eq(stories.readingLevel, input.readingLevel));
+      }
+      
+      if (input.genre) {
+        conditions.push(eq(stories.genre, input.genre));
+      }
+      
+      if (input.virtue) {
+        conditions.push(eq(stories.primaryVirtue, input.virtue));
+      }
+
+      // Query stories
+      const storyList = await db
+        .select()
+        .from(stories)
+        .where(and(...conditions))
+        .orderBy(desc(stories.publishedAt))
+        .limit(input.limit)
+        .offset(input.offset);
+
+      // Get total count for pagination
+      const [countResult] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(stories)
+        .where(and(...conditions));
+
       return {
-        stories: [],
-        total: 0,
+        stories: storyList,
+        total: countResult?.count || 0,
       };
     }),
 
@@ -23,8 +55,25 @@ export const storiesRouter = router({
       id: z.string().uuid(),
     }))
     .query(async ({ ctx, input }) => {
-      // TODO: Implement with Drizzle query
-      return null;
+      const [story] = await db
+        .select()
+        .from(stories)
+        .where(eq(stories.id, input.id))
+        .limit(1);
+
+      if (!story) return null;
+
+      // Get chapters for this story
+      const storyChapters = await db
+        .select()
+        .from(chapters)
+        .where(eq(chapters.storyId, input.id))
+        .orderBy(chapters.chapterNumber);
+
+      return {
+        ...story,
+        chapters: storyChapters,
+      };
     }),
 
   getBySlug: publicProcedure
@@ -32,7 +81,24 @@ export const storiesRouter = router({
       slug: z.string(),
     }))
     .query(async ({ ctx, input }) => {
-      // TODO: Implement with Drizzle query
-      return null;
+      const [story] = await db
+        .select()
+        .from(stories)
+        .where(eq(stories.slug, input.slug))
+        .limit(1);
+
+      if (!story) return null;
+
+      // Get chapters for this story
+      const storyChapters = await db
+        .select()
+        .from(chapters)
+        .where(eq(chapters.storyId, story.id))
+        .orderBy(chapters.chapterNumber);
+
+      return {
+        ...story,
+        chapters: storyChapters,
+      };
     }),
 });

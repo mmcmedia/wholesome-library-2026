@@ -83,9 +83,11 @@ Return JSON:
   return {
     editedChapters,
     result: {
+      success: true,
       editedContent: editorResult.editedText,
-      changes: editorResult.changes || [],
-      flags: editorResult.flags || [],
+      changesApplied: (editorResult.changes || []).map((c: any) => c.description || c),
+      flaggedConcerns: (editorResult.flags || []).map((f: any) => f.description || f),
+      timestamp: new Date().toISOString(),
     },
   };
 }
@@ -101,7 +103,8 @@ function parseEditedText(editedText: string, originalChapters: Chapter[]): Chapt
   
   for (let i = 0; i < originalChapters.length; i++) {
     const original = originalChapters[i];
-    const editedContent = (chapterSections[i + 1] || original.content)
+    const rawContent = chapterSections[i + 1] || original.content || '';
+    const editedContent = rawContent
       .split('\n\n---\n\n')[0] // Remove separator
       .trim();
     

@@ -57,7 +57,7 @@ export default function StoryNotificationEmail({
   return (
     <Html>
       <Head />
-      <Preview>{newStories.length} new stories for {childName} this week!</Preview>
+      <Preview>{`${newStories.length} new stories for ${childName} this week!`}</Preview>
       <Body style={main}>
         <Container style={container}>
           <Img

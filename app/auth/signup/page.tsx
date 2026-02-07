@@ -63,6 +63,8 @@ export default function SignupPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="text-base"
+                style={{ fontSize: '16px' }}
               />
             </div>
 
@@ -77,13 +79,15 @@ export default function SignupPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={8}
+                className="text-base"
+                style={{ fontSize: '16px' }}
               />
             </div>
 
             {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full bg-teal hover:bg-teal/90 text-white py-6 text-lg"
+              className="w-full bg-teal hover:bg-teal/90 text-white h-12 text-base sm:text-lg sm:h-auto sm:py-6"
               disabled={loading}
             >
               {loading ? 'Creating your account...' : 'Start Reading Free'}

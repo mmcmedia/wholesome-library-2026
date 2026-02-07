@@ -1,13 +1,16 @@
 'use client'
 
 import React, { useState } from 'react'
-import { BookOpen, Clock, TrendingUp, Settings, User, Plus } from 'lucide-react'
+import { BookOpen, Clock, TrendingUp, Settings, User, Plus, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
+import { EmptyState } from '@/components/ui/empty-state'
+import { FadeIn } from '@/components/ui/fade-in'
+import { CountUp } from '@/components/ui/count-up'
 
 export default function ParentDashboardPage() {
   const [includeFantasy, setIncludeFantasy] = useState(true)
@@ -20,7 +23,7 @@ export default function ParentDashboardPage() {
     { id: '2', name: 'Noah', readingLevel: 'early', storiesRead: 8, minutesRead: 150 },
   ]
 
-  const [selectedChild, setSelectedChild] = useState(mockChildren[0])
+  const [selectedChild, setSelectedChild] = useState(mockChildren.length > 0 ? mockChildren[0] : null)
 
   const recentStories = [
     { title: 'The Brave Little Lighthouse', completedAt: '2 days ago', level: 'early' },
@@ -60,9 +63,9 @@ export default function ParentDashboardPage() {
                   {mockChildren.map((child) => (
                     <Button
                       key={child.id}
-                      variant={selectedChild.id === child.id ? 'default' : 'outline'}
+                      variant={selectedChild?.id === child.id ? 'default' : 'outline'}
                       onClick={() => setSelectedChild(child)}
-                      className={selectedChild.id === child.id ? 'bg-teal hover:bg-teal/90' : ''}
+                      className={selectedChild?.id === child.id ? 'bg-teal hover:bg-teal/90' : ''}
                     >
                       <User className="h-4 w-4 mr-2" />
                       {child.name}
@@ -77,70 +80,89 @@ export default function ParentDashboardPage() {
             </Card>
 
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Stories Read</CardTitle>
-                  <BookOpen className="h-4 w-4 text-teal" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-teal">{selectedChild.storiesRead}</div>
-                  <p className="text-xs text-charcoal/60 mt-1">This month</p>
-                </CardContent>
-              </Card>
+            {selectedChild && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <FadeIn delay={100}>
+                  <Card className="shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Stories Read</CardTitle>
+                      <BookOpen className="h-4 w-4 text-teal" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-teal">
+                        <CountUp end={selectedChild!.storiesRead} duration={1000} />
+                      </div>
+                      <p className="text-xs text-charcoal/60 mt-1">This month</p>
+                    </CardContent>
+                  </Card>
+                </FadeIn>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Reading Time</CardTitle>
-                  <Clock className="h-4 w-4 text-teal" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-teal">{selectedChild.minutesRead}</div>
-                  <p className="text-xs text-charcoal/60 mt-1">Minutes this month</p>
-                </CardContent>
-              </Card>
+                <FadeIn delay={200}>
+                  <Card className="shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Reading Time</CardTitle>
+                      <Clock className="h-4 w-4 text-teal" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-teal">
+                        <CountUp end={selectedChild!.minutesRead} duration={1000} />
+                      </div>
+                      <p className="text-xs text-charcoal/60 mt-1">Minutes this month</p>
+                    </CardContent>
+                  </Card>
+                </FadeIn>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Reading Level</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-teal" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-xl font-bold text-teal capitalize">{selectedChild.readingLevel}</div>
-                  <p className="text-xs text-charcoal/60 mt-1">On track</p>
-                </CardContent>
-              </Card>
-            </div>
+                <FadeIn delay={300}>
+                  <Card className="shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Reading Level</CardTitle>
+                      <TrendingUp className="h-4 w-4 text-teal" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-xl font-bold text-teal capitalize">{selectedChild!.readingLevel}</div>
+                      <p className="text-xs text-charcoal/60 mt-1">On track</p>
+                    </CardContent>
+                  </Card>
+                </FadeIn>
+              </div>
+            )}
 
             {/* Recent Stories */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recently Read</CardTitle>
-                <CardDescription>Stories {selectedChild.name} has completed</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {recentStories.map((story, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 rounded-lg hover:bg-charcoal/5 transition-colors">
-                      <div>
-                        <div className="font-medium text-charcoal">{story.title}</div>
-                        <div className="text-sm text-charcoal/60">{story.completedAt}</div>
-                      </div>
-                      <Badge variant="outline" className="capitalize">
-                        {story.level}
-                      </Badge>
+            {selectedChild && (
+              <FadeIn delay={400}>
+                <Card className="shadow-md">
+                  <CardHeader>
+                    <CardTitle>Recently Read</CardTitle>
+                    <CardDescription>Stories {selectedChild!.name} has completed</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {recentStories.map((story, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-3 rounded-lg hover:bg-charcoal/5 transition-all duration-200 hover:scale-[1.02]"
+                        >
+                          <div>
+                            <div className="font-medium text-charcoal">{story.title}</div>
+                            <div className="text-sm text-charcoal/60">{story.completedAt}</div>
+                          </div>
+                          <Badge variant="outline" className="capitalize">
+                            {story.level}
+                          </Badge>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              </FadeIn>
+            )}
           </TabsContent>
 
           {/* Content Preferences Tab */}
           <TabsContent value="preferences" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Content Filters for {selectedChild.name}</CardTitle>
+                <CardTitle>Content Filters for {selectedChild!.name}</CardTitle>
                 <CardDescription>
                   Control what themes and content types appear in the library
                 </CardDescription>
