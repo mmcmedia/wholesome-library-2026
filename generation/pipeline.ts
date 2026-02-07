@@ -3,21 +3,21 @@
  * Runs the full story generation workflow: Brief → DNA → Chapters → QA → Review
  */
 
-import { StoryBrief, PipelineRunLog } from './types.js';
-import { PipelineLogger, generateRunId } from './utils/logger.js';
-import { getSupabaseClient } from './utils/supabase.js';
+import { StoryBrief, PipelineRunLog } from './types';
+import { PipelineLogger, generateRunId } from './utils/logger';
+import { getSupabaseClient } from './utils/supabase';
 import {
   getNextBrief,
   markBriefGenerating,
   markBriefCompleted,
   markBriefFailed,
-} from './lib/brief-manager.js';
-import { generateStoryDNA, generateChapters } from './lib/story-creator.js';
-import { runAIEditor } from './lib/ai-editor.js';
-import { runQualityCheck } from './lib/quality-check.js';
-import { runSafetyScan } from './lib/safety-scan.js';
-import { runValuesCheck } from './lib/values-check.js';
-import { generateCover } from './lib/cover-generator.js';
+} from './lib/brief-manager';
+import { generateStoryDNA, generateChapters } from './lib/story-creator';
+import { runAIEditor } from './lib/ai-editor';
+import { runQualityCheck } from './lib/quality-check';
+import { runSafetyScan } from './lib/safety-scan';
+import { runValuesCheck } from './lib/values-check';
+import { generateCover } from './lib/cover-generator';
 
 /**
  * Run the full pipeline for a single story brief

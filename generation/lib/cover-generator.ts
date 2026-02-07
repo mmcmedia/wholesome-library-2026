@@ -3,8 +3,8 @@
  * Per PRD requirements and TOOLS.md documentation
  */
 
-import { StoryDNA, CoverGenerationResult } from '../types.js';
-import { PipelineLogger } from '../utils/logger.js';
+import { StoryDNA, CoverGenerationResult } from '../types';
+import { PipelineLogger } from '../utils/logger';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
 

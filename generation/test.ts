@@ -3,10 +3,10 @@
  * Quick test script to verify pipeline setup
  */
 
-import { PipelineLogger, generateRunId } from './utils/logger.js';
-import { getSupabaseClient } from './utils/supabase.js';
-import { getOpenAIClient } from './utils/openai.js';
-import { autoGenerateBriefs } from './lib/brief-manager.js';
+import { PipelineLogger, generateRunId } from './utils/logger.ts';
+import { getSupabaseClient } from './utils/supabase.ts';
+import { getOpenAIClient } from './utils/openai.ts';
+import { autoGenerateBriefs } from './lib/brief-manager.ts';
 
 async function test() {
   const logger = new PipelineLogger(generateRunId());

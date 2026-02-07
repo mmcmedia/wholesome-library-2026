@@ -3,9 +3,9 @@
  * Per PRD Section 9.3
  */
 
-import { StoryDNA, Chapter, ValuesCheckResult } from '../types.js';
-import { executeCompletion, parseJSONSafely } from '../utils/openai.js';
-import { PipelineLogger } from '../utils/logger.js';
+import { StoryDNA, Chapter, ValuesCheckResult } from '../types';
+import { executeCompletion, parseJSONSafely } from '../utils/openai';
+import { PipelineLogger } from '../utils/logger';
 
 const VALUES_DIMENSIONS = [
   'Positive Role Models',

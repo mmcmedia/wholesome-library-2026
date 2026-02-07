@@ -3,9 +3,9 @@
  * Per PRD Section 9.6
  */
 
-import { StoryDNA, Chapter, AIEditorResult } from '../types.js';
-import { executeCompletion, parseJSONSafely } from '../utils/openai.js';
-import { PipelineLogger } from '../utils/logger.js';
+import { StoryDNA, Chapter, AIEditorResult } from '../types';
+import { executeCompletion, parseJSONSafely } from '../utils/openai';
+import { PipelineLogger } from '../utils/logger';
 
 /**
  * Run AI editor pass on the full story

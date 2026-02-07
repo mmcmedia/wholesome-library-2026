@@ -8,9 +8,9 @@
  *   node run.ts --auto-generate 10 # Generate 10 briefs first, then process one
  */
 
-import { runPipeline } from './pipeline.js';
-import { getNextBrief, autoGenerateBriefs } from './lib/brief-manager.js';
-import { PipelineLogger, generateRunId } from './utils/logger.js';
+import { runPipeline } from './pipeline';
+import { getNextBrief, autoGenerateBriefs } from './lib/brief-manager';
+import { PipelineLogger, generateRunId } from './utils/logger';
 
 async function main() {
   const logger = new PipelineLogger(generateRunId());

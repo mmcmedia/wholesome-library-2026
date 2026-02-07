@@ -3,9 +3,9 @@
  * Per PRD Section 9.2
  */
 
-import { StoryDNA, Chapter, SafetyCheckResult } from '../types.js';
-import { executeCompletion, parseJSONSafely } from '../utils/openai.js';
-import { PipelineLogger } from '../utils/logger.js';
+import { StoryDNA, Chapter, SafetyCheckResult } from '../types';
+import { executeCompletion, parseJSONSafely } from '../utils/openai';
+import { PipelineLogger } from '../utils/logger';
 
 const SAFETY_CRITERIA = [
   'No violence beyond age level',
