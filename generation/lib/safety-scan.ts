@@ -26,7 +26,7 @@ export async function runSafetyScan(
   dna: StoryDNA,
   chapters: Chapter[],
   logger: PipelineLogger
-): Promise<SafetyCheckResult> {
+): Promise<SafetyScanResult> {
   logger.log('SAFETY_SCAN', 'Running safety assessment');
   
   const fullText = chapters.map(ch => ch.content).join('\n\n');
@@ -78,7 +78,12 @@ Return JSON:
   
   return {
     passed,
-    flags: result.issues.map((i: any) => `${i.type}: ${i.description}`),
-    issues: result.issues || [],
+    timestamp: new Date().toISOString(),
+    checks: SAFETY_CRITERIA.map((criterion, i) => ({
+      name: criterion,
+      passed: !result.issues.some((issue: any) => issue.criterion === i + 1),
+      issue: result.issues.find((issue: any) => issue.criterion === i + 1)?.description,
+    })),
+    issues: result.issues?.map((i: any) => `${i.type}: ${i.description}`) || [],
   };
 }

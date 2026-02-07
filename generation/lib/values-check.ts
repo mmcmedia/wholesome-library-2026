@@ -86,7 +86,7 @@ Return JSON:
   });
   
   return {
-    score: parseFloat(average.toFixed(2)),
+    averageScore: parseFloat(average.toFixed(2)),
     dimensions: {
       positiveRoleModels: scores.positiveRoleModels,
       consequenceLogic: scores.consequenceLogic,
@@ -95,7 +95,6 @@ Return JSON:
       virtueIntegration: scores.virtueIntegration,
       hopefulEnding: scores.hopefulEnding,
     },
-    passed,
-    flags: scores.flags || [],
+    timestamp: new Date().toISOString(),
   };
 }
