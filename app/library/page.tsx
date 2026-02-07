@@ -68,26 +68,27 @@ export default function LibraryPage() {
     <div className="min-h-screen bg-gradient-to-br from-teal/5 to-white">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
-        <div className="mb-8">
+        <header className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-charcoal mb-2">
             Browse Our Library
           </h1>
           <p className="text-charcoal/70 text-lg">
             {filteredStories.length} wholesome {filteredStories.length === 1 ? 'story' : 'stories'} waiting for your family
           </p>
-        </div>
+        </header>
 
         {/* Search and Filters */}
-        <div className="mb-8 space-y-4">
+        <section aria-label="Search and filter stories" className="mb-8 space-y-4">
           <div className="flex gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-charcoal/40" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-charcoal/40" aria-hidden="true" />
               <Input
-                type="text"
+                type="search"
                 placeholder="Search stories..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 py-6 text-lg"
+                aria-label="Search stories by title or description"
               />
             </div>
             <Button
@@ -95,18 +96,26 @@ export default function LibraryPage() {
               size="lg"
               onClick={() => setShowFilters(!showFilters)}
               className="gap-2"
+              aria-label={`${showFilters ? 'Hide' : 'Show'} filters ${activeFiltersCount > 0 ? `(${activeFiltersCount} active)` : ''}`}
+              aria-expanded={showFilters}
             >
-              <SlidersHorizontal className="h-5 w-5" />
+              <SlidersHorizontal className="h-5 w-5" aria-hidden="true" />
               Filters
               {activeFiltersCount > 0 && (
-                <Badge className="ml-1">{activeFiltersCount}</Badge>
+                <Badge className="ml-1" aria-label={`${activeFiltersCount} filters active`}>
+                  {activeFiltersCount}
+                </Badge>
               )}
             </Button>
           </div>
 
           {/* Filter Controls */}
           {showFilters && (
-            <div className="bg-white rounded-xl p-6 shadow-md border border-teal/10 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div 
+              className="bg-white rounded-xl p-6 shadow-md border border-teal/10 grid grid-cols-1 md:grid-cols-3 gap-4"
+              role="region"
+              aria-label="Story filters"
+            >
               <div>
                 <label className="block text-sm font-medium text-charcoal mb-2">
                   Reading Level
@@ -178,11 +187,15 @@ export default function LibraryPage() {
               )}
             </div>
           )}
-        </div>
+        </section>
 
         {/* Story Grid */}
         {filteredStories.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <section 
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            aria-label="Story library"
+            role="region"
+          >
             {filteredStories.map((story) => (
               <StoryCard key={story.id} story={story} />
             ))}
