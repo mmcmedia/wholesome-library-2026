@@ -301,28 +301,54 @@ async function saveStory(
   // Generate unique slug
   const slug = await generateUniqueSlug(dna.meta.title, logger);
   
+  // FIX 5: Schema pre-validation - validate BEFORE expensive insert
+  const storyData = {
+    title: dna.meta.title,
+    slug,
+    blurb,
+    reading_level: dna.meta.readingLevel,
+    genre: dna.meta.genre,
+    primary_virtue: dna.meta.coreThemes[0],
+    secondary_virtues: dna.meta.coreThemes.slice(1),
+    content_tags: [],
+    chapter_count: chapters.length,
+    total_word_count: chapters.reduce((sum, ch) => sum + ch.wordCount, 0),
+    estimated_read_minutes: Math.ceil(chapters.reduce((sum, ch) => sum + ch.wordCount, 0) / 200),
+    cover_image_url: cover.localPath || cover.imageUrl || null,
+    status,
+    quality_score: quality.score,
+    safety_passed: safety.passed,
+    values_score: values.score,
+    published_at: status === 'approved' ? new Date().toISOString() : null,
+  };
+  
+  // Validate required string fields
+  const requiredStrings: (keyof typeof storyData)[] = ['title', 'slug', 'reading_level', 'genre', 'primary_virtue', 'status'];
+  for (const field of requiredStrings) {
+    if (typeof storyData[field] !== 'string' || !storyData[field]) {
+      throw new Error(`Schema validation failed BEFORE insert: ${field} must be a non-empty string (got: ${typeof storyData[field]})`);
+    }
+  }
+  
+  // Validate required number fields
+  const requiredNumbers: (keyof typeof storyData)[] = ['chapter_count', 'total_word_count', 'quality_score', 'values_score'];
+  for (const field of requiredNumbers) {
+    if (typeof storyData[field] !== 'number' || isNaN(storyData[field] as number)) {
+      throw new Error(`Schema validation failed BEFORE insert: ${field} must be a valid number (got: ${typeof storyData[field]})`);
+    }
+  }
+  
+  // Validate required boolean
+  if (typeof storyData.safety_passed !== 'boolean') {
+    throw new Error(`Schema validation failed BEFORE insert: safety_passed must be a boolean (got: ${typeof storyData.safety_passed})`);
+  }
+  
+  logger.log('PIPELINE', 'Schema validation passed, proceeding with insert');
+  
   // Insert story
   const { data: story, error: storyError } = await supabase
     .from('stories')
-    .insert({
-      title: dna.meta.title,
-      slug,
-      blurb,
-      reading_level: dna.meta.readingLevel,
-      genre: dna.meta.genre,
-      primary_virtue: dna.meta.coreThemes[0],
-      secondary_virtues: dna.meta.coreThemes.slice(1),
-      content_tags: [],
-      chapter_count: chapters.length,
-      total_word_count: chapters.reduce((sum, ch) => sum + ch.wordCount, 0),
-      estimated_read_minutes: Math.ceil(chapters.reduce((sum, ch) => sum + ch.wordCount, 0) / 200),
-      cover_image_url: cover.localPath || cover.imageUrl || null,
-      status,
-      quality_score: quality.score,
-      safety_passed: safety.passed,
-      values_score: values.score,
-      published_at: status === 'approved' ? new Date().toISOString() : null,
-    })
+    .insert(storyData)
     .select()
     .single();
   

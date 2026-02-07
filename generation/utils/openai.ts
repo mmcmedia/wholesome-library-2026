@@ -54,8 +54,25 @@ const RETRY_CONFIG = {
 
 /**
  * Execute a completion with retry logic and exponential backoff
+ * FIX: Wrapped in 3-minute timeout
  */
 export async function executeCompletion(
+  params: ChatCompletionCreateParamsNonStreaming
+): Promise<string> {
+  const TIMEOUT_MS = 180000; // 3 minutes
+  
+  return Promise.race([
+    executeCompletionInternal(params),
+    new Promise<string>((_, reject) => 
+      setTimeout(() => reject(new Error('OpenAI API call timed out after 180 seconds')), TIMEOUT_MS)
+    )
+  ]);
+}
+
+/**
+ * Internal implementation with retry logic
+ */
+async function executeCompletionInternal(
   params: ChatCompletionCreateParamsNonStreaming
 ): Promise<string> {
   const client = getOpenAIClient()
@@ -118,8 +135,25 @@ export async function executeCompletion(
 /**
  * Execute a completion with retry logic, returning the full response object
  * Use when you need finish_reason or other metadata
+ * FIX: Wrapped in 3-minute timeout
  */
 export async function executeCompletionFull(
+  params: ChatCompletionCreateParamsNonStreaming
+): Promise<{ content: string; finishReason: string | null; usage: { promptTokens: number; completionTokens: number } }> {
+  const TIMEOUT_MS = 180000; // 3 minutes
+  
+  return Promise.race([
+    executeCompletionFullInternal(params),
+    new Promise<{ content: string; finishReason: string | null; usage: { promptTokens: number; completionTokens: number } }>(
+      (_, reject) => setTimeout(() => reject(new Error('OpenAI API call timed out after 180 seconds')), TIMEOUT_MS)
+    )
+  ]);
+}
+
+/**
+ * Internal implementation with retry logic
+ */
+async function executeCompletionFullInternal(
   params: ChatCompletionCreateParamsNonStreaming
 ): Promise<{ content: string; finishReason: string | null; usage: { promptTokens: number; completionTokens: number } }> {
   const client = getOpenAIClient()

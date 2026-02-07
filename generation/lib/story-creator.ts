@@ -304,10 +304,34 @@ const GENRE_CRAFT_GUIDES: Record<string, string> = {
 }
 
 /**
- * FIX 1: Get genre-specific craft guidance
+ * FIX 1: Normalize genre variations before lookup
+ */
+function normalizeGenre(genre: string): string {
+  const normalized = genre.toLowerCase().trim();
+  
+  // Genre alias map
+  const aliases: Record<string, string> = {
+    'science-fiction': 'sci-fi',
+    'science fiction': 'sci-fi',
+    'scifi': 'sci-fi',
+    'fairy tale': 'fairy-tale',
+    'fairytale': 'fairy-tale'
+  };
+  
+  return aliases[normalized] || normalized;
+}
+
+/**
+ * FIX 1: Get genre-specific craft guidance with normalization
  */
 function getGenreCraftGuidance(genre: string): string {
-  return GENRE_CRAFT_GUIDES[genre] || GENRE_CRAFT_GUIDES['adventure']
+  const normalizedGenre = normalizeGenre(genre);
+  
+  if (!GENRE_CRAFT_GUIDES[normalizedGenre]) {
+    console.warn(`[GENRE NORMALIZATION] Unknown genre "${genre}" (normalized: "${normalizedGenre}"), falling back to adventure`);
+  }
+  
+  return GENRE_CRAFT_GUIDES[normalizedGenre] || GENRE_CRAFT_GUIDES['adventure'];
 }
 
 /**
@@ -429,7 +453,7 @@ Generate a JSON structure with ALL fields exactly as shown:
   const systemPrompt = systemPrompts[variation % systemPrompts.length]
   const userPrompt = userPrompts[variation % userPrompts.length] + jsonStructure
   
-  const response = await executeCompletion({
+  const fullResult = await executeCompletionFull({
     model: 'gpt-5.2',
     messages: [
       { role: 'developer', content: systemPrompt },
@@ -440,13 +464,31 @@ Generate a JSON structure with ALL fields exactly as shown:
     max_completion_tokens: 3000,
   })
   
-  logger.debug('StoryCreator', `Stage 1 response length: ${response.length}`)
+  // FIX 3: Check if response was truncated
+  if (fullResult.finishReason === 'length') {
+    throw new Error('Stage 1 (Foundation) response was TRUNCATED due to token limit — increase max_completion_tokens')
+  }
   
-  const parsed = parseJSONSafely<any>(response, 'StoryCreator')
+  logger.debug('StoryCreator', `Stage 1 response length: ${fullResult.content.length}, finish_reason: ${fullResult.finishReason}`)
+  
+  const parsed = parseJSONSafely<any>(fullResult.content, 'StoryCreator')
   
   // Validate required fields
   if (!parsed.worldBible || !parsed.plotStructure || !parsed.emotionalStakes) {
     throw new Error('Foundation missing required fields')
+  }
+  
+  // FIX 4: Deeper DNA validation - check nested fields aren't empty
+  if (!parsed.worldBible.setting || typeof parsed.worldBible.setting !== 'string' || parsed.worldBible.setting.trim() === '') {
+    throw new Error('Foundation validation failed: worldBible.setting is missing or empty')
+  }
+  
+  if (!parsed.plotStructure.centralConflict || typeof parsed.plotStructure.centralConflict !== 'string' || parsed.plotStructure.centralConflict.trim() === '') {
+    throw new Error('Foundation validation failed: plotStructure.centralConflict is missing or empty')
+  }
+  
+  if (!parsed.emotionalStakes.core || typeof parsed.emotionalStakes.core !== 'string' || parsed.emotionalStakes.core.trim() === '') {
+    throw new Error('Foundation validation failed: emotionalStakes.core is missing or empty')
   }
   
   return parsed
@@ -530,7 +572,7 @@ IMPORTANT RULES:
 - speechStyle.emotionalTells: Voice changes under emotion (NOT example dialogue)
 - Create ${characterNames.length} unique characters with distinct voices`
   
-  const completionContent = await executeCompletion({
+  const fullResult = await executeCompletionFull({
     model: 'gpt-5.2',
     messages: [
       {
@@ -547,10 +589,14 @@ IMPORTANT RULES:
     max_completion_tokens: 3000,
   })
   
-  const response = completionContent
-  logger.debug('StoryCreator', `Stage 2 response length: ${response.length}`)
+  // FIX 3: Check if response was truncated
+  if (fullResult.finishReason === 'length') {
+    throw new Error('Stage 2 (Characters) response was TRUNCATED due to token limit — increase max_completion_tokens')
+  }
   
-  const parsed = parseJSONSafely<any>(response, 'StoryCreator')
+  logger.debug('StoryCreator', `Stage 2 response length: ${fullResult.content.length}, finish_reason: ${fullResult.finishReason}`)
+  
+  const parsed = parseJSONSafely<any>(fullResult.content, 'StoryCreator')
   
   // Validate required fields
   if (!parsed.characters || !parsed.characterTensions) {

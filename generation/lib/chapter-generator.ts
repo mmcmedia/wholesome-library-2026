@@ -343,7 +343,7 @@ Emotional focus: ${spec.dominantEmotion} (with ${spec.secondaryEmotion})
 FIX 3 - EMOTIONAL MICRO-BEATS: Vary the emotional texture within this chapter. Include at least one moment of humor or lightness, one moment of tension or urgency, and one quiet reflective beat where a character processes what's happening. Don't let the entire chapter sit at one emotional tone — kids need rhythm and variation to stay engaged.
 
 Scene type: ${spec.sceneType}
-WORD COUNT REQUIREMENT: Write ${spec.targetWordCount.target} words (minimum ${spec.targetWordCount.min}, maximum ${spec.targetWordCount.max}). This is enforced — chapters outside this range will be rejected.
+WORD COUNT GUIDANCE: Write between ${spec.targetWordCount.min} and ${spec.targetWordCount.max} words, targeting approximately ${spec.targetWordCount.target} words. Emotional micro-beats and story pacing are MORE IMPORTANT than hitting the exact word count. If a scene needs more space to breathe or should end crisply, follow the story's rhythm.
 ${previousContext}
 
 ${previousEnding ? `Previous chapter ended: "${previousEnding}"` : ''}
