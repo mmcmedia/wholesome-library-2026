@@ -6,7 +6,7 @@ import { Clock, BookOpen, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { pauseSubscription, getRetentionMetrics } from '@/lib/retention'
+import { pauseSubscriptionAction, getRetentionMetricsAction } from '@/app/actions/retention'
 import { useAuth } from '@/lib/supabase'
 
 interface RetentionMetrics {
@@ -35,7 +35,7 @@ export default function PauseSubscriptionPage() {
 
     const loadData = async () => {
       try {
-        const metricsData = await getRetentionMetrics(user.id)
+        const metricsData = await getRetentionMetricsAction(user.id)
         setMetrics(metricsData)
 
         // Estimate new stories (about 30-35 per week based on PRD)
@@ -60,7 +60,7 @@ export default function PauseSubscriptionPage() {
     setError('')
 
     try {
-      const result = await pauseSubscription(user.id, 30)
+      const result = await pauseSubscriptionAction(user.id, 30)
 
       if (result.success) {
         setResumeDate(result.resumeDate || null)

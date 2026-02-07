@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { getRetentionMetrics, cancelSubscription, getSubscriptionStatus } from '@/lib/retention'
+import { getRetentionMetricsAction, cancelSubscriptionAction, getSubscriptionStatusAction } from '@/app/actions/retention'
 import { useAuth } from '@/lib/supabase'
 
 interface RetentionMetrics {
