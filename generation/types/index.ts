@@ -372,6 +372,22 @@ export interface AIEditorResult {
 }
 
 /**
+ * Quality check result
+ */
+export interface QualityCheckResult {
+  score: number
+  dimensions: {
+    narrativeCoherence: number
+    characterConsistency: number
+    ageAppropriateness: number
+    engagement: number
+    technicalQuality: number
+  }
+  passed: boolean
+  flags: string[]
+}
+
+/**
  * Story status after all checks
  */
 export type StoryStatus = 'approved' | 'editor_queue' | 'rejected' | 'generating'

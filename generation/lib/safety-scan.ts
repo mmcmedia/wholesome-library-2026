@@ -3,7 +3,7 @@
  * Per PRD Section 9.2
  */
 
-import { StoryDNA, Chapter, SafetyCheckResult } from '../types';
+import { StoryDNA, Chapter, SafetyScanResult } from '../types';
 import { executeCompletion, parseJSONSafely } from '../utils/openai';
 import { PipelineLogger } from '../utils/logger';
 

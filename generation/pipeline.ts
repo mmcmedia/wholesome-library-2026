@@ -12,7 +12,8 @@ import {
   markBriefCompleted,
   markBriefFailed,
 } from './lib/brief-manager';
-import { generateStoryDNA, generateChapters } from './lib/story-creator';
+import { generateStoryDNA } from './lib/story-creator';
+import { generateChapters } from './lib/chapter-generator';
 import { runAIEditor } from './lib/ai-editor';
 import { runQualityCheck } from './lib/quality-check';
 import { runSafetyScan } from './lib/safety-scan';
@@ -51,10 +52,10 @@ export async function runPipeline(brief: StoryBrief): Promise<PipelineRunLog> {
       durationMs: Date.now() - dnaStart,
     };
     
-    // Stage 2: Chapter Drafting
-    logger.log('PIPELINE', 'Stage 2: Chapter Drafting');
+    // Stage 2: Chapter Drafting with V3 Continuity Tracking
+    logger.log('PIPELINE', 'Stage 2: Chapter Drafting with Continuity Tracking');
     const chapterStart = Date.now();
-    const chapters = await generateChapters(dna, logger);
+    const chapters = await generateChapters(dna, brief, logger);
     log.stages.chapterDrafting = {
       status: 'success',
       durationMs: Date.now() - chapterStart,
