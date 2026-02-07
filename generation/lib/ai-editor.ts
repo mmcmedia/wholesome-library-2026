@@ -19,7 +19,7 @@ export async function runAIEditor(
   logger.log('AI_EDITOR', 'Running AI editor pass');
   
   const fullText = chapters.map((ch, idx) => 
-    `# Chapter ${idx + 1}: ${ch.workingTitle}\n\n${ch.content}`
+    `# Chapter ${idx + 1}: ${ch.workingTitle}\n\n${ch.content || ''}`
   ).join('\n\n---\n\n');
   
   const prompt = `Edit this children's story for technical quality. DO NOT change plot or voice.

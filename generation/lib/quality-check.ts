@@ -8,6 +8,20 @@ import { executeCompletion, parseJSONSafely } from '../utils/openai';
 import { PipelineLogger } from '../utils/logger';
 
 /**
+ * Estimate total word count based on reading level and chapter count
+ */
+function estimateTotalWords(readingLevel: string, totalChapters: number): string {
+  const perChapter: Record<string, [number, number]> = {
+    early: [400, 600],
+    independent: [800, 1200],
+    confident: [1000, 1500],
+    advanced: [1200, 2000],
+  };
+  const [min, max] = perChapter[readingLevel] || perChapter.independent;
+  return `${totalChapters * min}-${totalChapters * max}`;
+}
+
+/**
  * Run automated quality check on story
  * Returns score 0-100 with dimensional breakdown
  */
@@ -35,7 +49,7 @@ Score each dimension:
 2. **Character Consistency (0-20)**: Same names/personalities across chapters? Clear character arcs?
 3. **Age Appropriateness (0-20)**: Vocabulary, sentence complexity, themes match ${dna.meta.readingLevel} level?
 4. **Engagement (0-20)**: Would a kid want to keep reading? Compelling hooks? Satisfying resolution?
-5. **Technical Quality (0-15)**: Grammar, spelling, formatting correct? Proper word count (~${dna.meta.totalChapters * 600}-${dna.meta.totalChapters * 1000} words)?
+5. **Technical Quality (0-15)**: Grammar, spelling, formatting correct? Expected total word count: ~${estimateTotalWords(dna.meta.readingLevel, dna.meta.totalChapters)} words.
 
 Return JSON:
 {

@@ -150,8 +150,8 @@ export async function runPipeline(brief: StoryBrief): Promise<PipelineRunLog> {
     
     // Stage 4: Quality Check
     logger.log('PIPELINE', 'Stage 4: Quality Check');
-    const qualityResult = await runQualityCheck(dna, editedChapters, logger);
     const qualityStart = Date.now();
+    const qualityResult = await runQualityCheck(dna, editedChapters, logger);
     log.stages.qualityCheck = createStageLog('Quality Check', qualityStart);
     
     // Stage 5: Safety Scan
@@ -251,10 +251,10 @@ async function generateBlurb(dna: any, chapters: any[], logger: PipelineLogger):
     });
     
     const result = parseJSONSafely<any>(completion.choices[0]?.message?.content || '{}', 'Pipeline');
-    return result.blurb || dna.hook;
+    return result.blurb || dna.hook || `A ${dna.meta.genre} story about ${Object.keys(dna.characters).slice(0, 2).join(' and ')}.`;
   } catch (error) {
     logger.warn('PIPELINE', 'Blurb generation failed, using fallback');
-    return dna.hook;
+    return dna.hook || `A ${dna.meta.genre} story about ${Object.keys(dna.characters).slice(0, 2).join(' and ')}.`;
   }
 }
 

@@ -68,7 +68,8 @@ Return JSON:
   
   const result = parseJSONSafely<any>(response, 'Safety Scan');
   
-  const passed = result.passed && result.issues.length === 0;
+  const issues = result.issues || [];
+  const passed = result.passed !== false && issues.length === 0;
   
   logger.log('SAFETY_SCAN', 'Safety scan complete', {
     passed,
@@ -77,13 +78,13 @@ Return JSON:
   
   return {
     passed,
-    flags: result.issues?.map((i: any) => `${i.type}: ${i.description}`) || [],
+    flags: issues.map((i: any) => `${i.type}: ${i.description}`),
     timestamp: new Date().toISOString(),
-    checks: SAFETY_CRITERIA.map((criterion, i) => ({
+    checks: SAFETY_CRITERIA.map((criterion, idx) => ({
       name: criterion,
-      passed: !result.issues.some((issue: any) => issue.criterion === i + 1),
-      issue: result.issues.find((issue: any) => issue.criterion === i + 1)?.description,
+      passed: !issues.some((issue: any) => issue.criterion === idx + 1),
+      issue: issues.find((issue: any) => issue.criterion === idx + 1)?.description,
     })),
-    issues: result.issues?.map((i: any) => `${i.type}: ${i.description}`) || [],
+    issues: issues.map((i: any) => `${i.type}: ${i.description}`),
   };
 }

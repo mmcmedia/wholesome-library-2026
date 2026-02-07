@@ -68,13 +68,24 @@ Return JSON:
   
   const scores = parseJSONSafely<any>(response, 'Values Check');
   
+  // Clamp each dimension to 1-5 range
+  const clamp15 = (v: number) => Math.min(Math.max(v || 1, 1), 5);
+  const clamped = {
+    positiveRoleModels: clamp15(scores.positiveRoleModels),
+    consequenceLogic: clamp15(scores.consequenceLogic),
+    conflictResolution: clamp15(scores.conflictResolution),
+    authorityRespect: clamp15(scores.authorityRespect),
+    virtueIntegration: clamp15(scores.virtueIntegration),
+    hopefulEnding: clamp15(scores.hopefulEnding),
+  };
+  
   const average =
-    (scores.positiveRoleModels +
-      scores.consequenceLogic +
-      scores.conflictResolution +
-      scores.authorityRespect +
-      scores.virtueIntegration +
-      scores.hopefulEnding) / 6;
+    (clamped.positiveRoleModels +
+      clamped.consequenceLogic +
+      clamped.conflictResolution +
+      clamped.authorityRespect +
+      clamped.virtueIntegration +
+      clamped.hopefulEnding) / 6;
   
   const passed = average >= 3.0;
   
@@ -88,14 +99,7 @@ Return JSON:
     score: parseFloat(average.toFixed(2)),
     passed,
     averageScore: parseFloat(average.toFixed(2)),
-    dimensions: {
-      positiveRoleModels: scores.positiveRoleModels,
-      consequenceLogic: scores.consequenceLogic,
-      conflictResolution: scores.conflictResolution,
-      authorityRespect: scores.authorityRespect,
-      virtueIntegration: scores.virtueIntegration,
-      hopefulEnding: scores.hopefulEnding,
-    },
+    dimensions: clamped,
     timestamp: new Date().toISOString(),
   };
 }
