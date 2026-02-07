@@ -9,7 +9,7 @@ export const planEnum = pgEnum('plan', ['free', 'family', 'annual']);
 
 // Profiles (extends Supabase auth.users)
 export const profiles = pgTable('profiles', {
-  id: uuid('id').primaryKey().references(() => ({ schema: 'auth', table: 'users', column: 'id' })),
+  id: uuid('id').primaryKey(), // References auth.users(id) in migration SQL
   email: text('email').notNull(),
   displayName: text('display_name'),
   plan: planEnum('plan').default('free'),
@@ -62,7 +62,7 @@ export const stories = pgTable('stories', {
   totalWordCount: integer('total_word_count'),
   estimatedReadMinutes: integer('estimated_read_minutes'),
   coverImageUrl: text('cover_image_url'),
-  status: storyStatusEnum('status').default('draft').notNull(),
+  status: storyStatusEnum('status').default('generating').notNull(),
   qualityScore: numeric('quality_score', { precision: 5, scale: 2 }),
   safetyPassed: boolean('safety_passed'),
   valuesScore: numeric('values_score', { precision: 5, scale: 2 }),
