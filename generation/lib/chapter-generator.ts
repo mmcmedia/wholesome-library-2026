@@ -142,6 +142,17 @@ export async function generateChapters(
     }
   }
   
+  // Detect chapter gaps
+  const expectedNumbers = Array.from({length: dna.chapterSpecs.length}, (_, i) => i + 1);
+  const actualNumbers = chapters.map(ch => ch.chapterNumber);
+  const missing = expectedNumbers.filter(n => !actualNumbers.includes(n));
+
+  if (missing.length > 0) {
+    logger.error('ChapterGenerator', `Missing chapters: ${missing.join(', ')}. Story incomplete.`);
+    // Don't return incomplete story — throw
+    throw new Error(`Story generation incomplete: missing chapters ${missing.join(', ')}`);
+  }
+  
   logger.log('ChapterGenerator', `Generated ${chapters.length}/${dna.chapterSpecs.length} chapters`)
   return chapters
 }
@@ -292,7 +303,7 @@ async function generateChapterContent(
   const openai = await getOpenAIClient()
   
   const completion = await openai.chat.completions.create({
-    model: 'gpt-4o-mini', // Use gpt-5.2 when available
+    model: 'gpt-5.2',
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }
@@ -354,7 +365,7 @@ Check for continuity violations.`
   
   try {
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini', // Use gpt-5-mini when available (fast validation)
+      model: 'gpt-5-mini',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
@@ -397,7 +408,7 @@ async function regenerateWithConstraints(
 ${violations.map((v, i) => `${i + 1}. ${v.type}: ${v.description}`).join('\n')}`
   
   const completion = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+    model: 'gpt-5.2',
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt + constraintsPrompt }

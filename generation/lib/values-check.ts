@@ -58,7 +58,7 @@ Return JSON:
 }`;
 
   const response = await executeCompletion({
-    model: 'gpt-4o-mini',
+    model: 'gpt-5-mini',
     messages: [
       { role: 'system', content: 'You are a children\'s values education expert.' },
       { role: 'user', content: prompt }
@@ -86,6 +86,8 @@ Return JSON:
   });
   
   return {
+    score: parseFloat(average.toFixed(2)),
+    passed,
     averageScore: parseFloat(average.toFixed(2)),
     dimensions: {
       positiveRoleModels: scores.positiveRoleModels,

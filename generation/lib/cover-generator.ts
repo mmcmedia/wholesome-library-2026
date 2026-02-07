@@ -5,7 +5,7 @@
 
 import { StoryDNA, CoverGenerationResult } from '../types';
 import { PipelineLogger } from '../utils/logger';
-import { writeFile } from 'fs/promises';
+import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 
 const KIE_API_KEY = process.env.KIE_AI_API_KEY;
@@ -149,7 +149,9 @@ async function downloadCover(imageUrl: string, storyId: string, logger: Pipeline
   
   // Save to project public directory
   const filename = `cover-${storyId}.png`;
-  const localPath = join(process.cwd(), 'public', 'covers', filename);
+  const dir = join(process.cwd(), 'public', 'covers');
+  await mkdir(dir, { recursive: true });
+  const localPath = join(dir, filename);
   
   await writeFile(localPath, Buffer.from(buffer));
   

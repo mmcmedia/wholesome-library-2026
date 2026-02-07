@@ -303,6 +303,7 @@ export interface QualityScore {
  */
 export interface SafetyScanResult {
   passed: boolean
+  flags: string[]
   timestamp: string
   checks: Array<{
     name: string
@@ -316,32 +317,16 @@ export interface SafetyScanResult {
  * Values check result (1-5 scale per dimension)
  */
 export interface ValuesCheckResult {
+  score: number
+  passed: boolean
   averageScore: number
   dimensions: {
-    positiveRoleModels: {
-      score: 1 | 2 | 3 | 4 | 5
-      feedback: string
-    }
-    consequenceLogic: {
-      score: 1 | 2 | 3 | 4 | 5
-      feedback: string
-    }
-    conflictResolution: {
-      score: 1 | 2 | 3 | 4 | 5
-      feedback: string
-    }
-    authorityRespect: {
-      score: 1 | 2 | 3 | 4 | 5
-      feedback: string
-    }
-    virtueIntegration: {
-      score: 1 | 2 | 3 | 4 | 5
-      feedback: string
-    }
-    hopefulEnding: {
-      score: 1 | 2 | 3 | 4 | 5
-      feedback: string
-    }
+    positiveRoleModels: number
+    consequenceLogic: number
+    conflictResolution: number
+    authorityRespect: number
+    virtueIntegration: number
+    hopefulEnding: number
   }
   timestamp: string
 }

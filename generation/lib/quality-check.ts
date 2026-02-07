@@ -48,7 +48,7 @@ Return JSON:
 }`;
 
   const response = await executeCompletion({
-    model: 'gpt-4o-mini',
+    model: 'gpt-5-mini',
     messages: [
       { role: 'system', content: 'You are a children\'s literature quality assessor.' },
       { role: 'user', content: prompt }

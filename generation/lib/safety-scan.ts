@@ -58,7 +58,7 @@ Return JSON:
 }`;
 
   const response = await executeCompletion({
-    model: 'gpt-4o-mini',
+    model: 'gpt-5-mini',
     messages: [
       { role: 'system', content: 'You are a children\'s content safety expert.' },
       { role: 'user', content: prompt }
@@ -78,6 +78,7 @@ Return JSON:
   
   return {
     passed,
+    flags: result.issues?.map((i: any) => `${i.type}: ${i.description}`) || [],
     timestamp: new Date().toISOString(),
     checks: SAFETY_CRITERIA.map((criterion, i) => ({
       name: criterion,

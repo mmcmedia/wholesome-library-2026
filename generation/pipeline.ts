@@ -19,6 +19,7 @@ import { runQualityCheck } from './lib/quality-check';
 import { runSafetyScan } from './lib/safety-scan';
 import { runValuesCheck } from './lib/values-check';
 import { generateCover } from './lib/cover-generator';
+import { getTokenUsage, resetTokenUsage } from './utils/openai';
 import type { StageLog } from './types';
 
 /**
@@ -61,6 +62,9 @@ export async function runPipeline(brief: StoryBrief): Promise<PipelineRunLog> {
   };
   
   try {
+    // Reset token usage tracker at start of run
+    resetTokenUsage();
+    
     // Mark brief as generating
     await markBriefGenerating(brief.id, logger);
     
@@ -116,6 +120,16 @@ export async function runPipeline(brief: StoryBrief): Promise<PipelineRunLog> {
     // Mark brief as completed
     await markBriefCompleted(brief.id, storyId, logger);
     
+    // Get final token usage
+    const tokenUsage = getTokenUsage();
+    log.tokenUsage = {
+      dnaTokens: tokenUsage.input + tokenUsage.output, // Rough estimate per stage
+      chapterTokens: tokenUsage.input + tokenUsage.output,
+      editorTokens: 0,
+      qaTokens: 0,
+      total: tokenUsage.total
+    };
+    
     log.status = 'success';
     log.endTime = new Date().toISOString();
     log.duration = Date.now() - startTime;
@@ -124,6 +138,7 @@ export async function runPipeline(brief: StoryBrief): Promise<PipelineRunLog> {
       storyId,
       status,
       duration: log.duration,
+      tokensUsed: tokenUsage.total,
     });
     
     return log;

@@ -9,6 +9,18 @@ import type { ChatCompletionCreateParamsNonStreaming } from 'openai/resources/ch
 let openaiClient: OpenAI | null = null
 
 /**
+ * Token usage tracker (accumulated across all calls in a session)
+ */
+const tokenTracker = {
+  inputTokens: 0,
+  outputTokens: 0,
+  reset() {
+    this.inputTokens = 0;
+    this.outputTokens = 0;
+  }
+}
+
+/**
  * Get or create OpenAI client
  */
 export function getOpenAIClient(): OpenAI {
@@ -56,6 +68,12 @@ export async function executeCompletion(
 
       if (!content) {
         throw new Error('Empty response from OpenAI API')
+      }
+
+      // Track token usage
+      if (response.usage) {
+        tokenTracker.inputTokens += response.usage.prompt_tokens || 0;
+        tokenTracker.outputTokens += response.usage.completion_tokens || 0;
       }
 
       return content
@@ -207,6 +225,24 @@ export async function runQACheck(
   }
 
   return executeCompletion(params)
+}
+
+/**
+ * Get accumulated token usage for current session
+ */
+export function getTokenUsage(): { input: number; output: number; total: number } {
+  return {
+    input: tokenTracker.inputTokens,
+    output: tokenTracker.outputTokens,
+    total: tokenTracker.inputTokens + tokenTracker.outputTokens
+  };
+}
+
+/**
+ * Reset token usage tracker (call at start of pipeline run)
+ */
+export function resetTokenUsage(): void {
+  tokenTracker.reset();
 }
 
 /**

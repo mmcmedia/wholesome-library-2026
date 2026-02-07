@@ -305,7 +305,7 @@ Generate a JSON structure with ALL fields exactly as shown:
   const userPrompt = userPrompts[variation % userPrompts.length] + jsonStructure
   
   const completion = await openai.chat.completions.create({
-    model: 'gpt-4o-mini', // Use gpt-5.2 when available; fallback to gpt-4o-mini
+    model: 'gpt-5.2',
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }
@@ -400,7 +400,7 @@ IMPORTANT RULES:
 - Create ${characterNames.length} unique characters with distinct voices`
   
   const completion = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+    model: 'gpt-5.2',
     messages: [
       {
         role: 'system',
@@ -521,7 +521,7 @@ CRITICAL REQUIREMENTS:
 - Plan cliffhanger resolutions BEFORE writing them`
   
   const completion = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+    model: 'gpt-5.2',
     messages: [
       {
         role: 'system',
@@ -580,6 +580,7 @@ function combineStagesToDNA(
     meta: {
       genre: brief.genre,
       title: `${brief.primary_virtue} Adventure`,
+      readingLevel: brief.reading_level,
       targetAgeRange: getAgeRange(brief.reading_level),
       coreThemes: brief.themes,
       totalChapters: brief.target_chapters
@@ -695,19 +696,24 @@ export function getAgeRange(readingLevel: string): string {
 }
 
 /**
- * Generate default character names based on genre
+ * Generate default character names based on genre (randomized from pool)
  */
 export function generateDefaultCharacterNames(genre: string): string[] {
-  const namesByGenre: Record<string, string[]> = {
-    adventure: ['Alex', 'Jordan'],
-    fantasy: ['Aria', 'Finn'],
-    mystery: ['Quinn', 'Riley'],
-    friendship: ['Emma', 'Sophia'],
-    'sci-fi': ['Nova', 'Zephyr'],
-    animal: ['Bramble', 'Willow']
+  const namePoolsByGenre: Record<string, string[]> = {
+    adventure: ['Alex', 'Jordan', 'Riley', 'Sam', 'Casey', 'Morgan', 'Taylor', 'Jamie', 'Avery', 'Quinn'],
+    fantasy: ['Aria', 'Finn', 'Luna', 'Rowan', 'Sage', 'Ember', 'Asher', 'Ivy', 'Orion', 'Lyra'],
+    mystery: ['Quinn', 'Riley', 'Parker', 'Blake', 'Harper', 'Sawyer', 'Piper', 'Camden', 'Sloane', 'Reed'],
+    friendship: ['Emma', 'Sophia', 'Liam', 'Noah', 'Olivia', 'Ava', 'Ethan', 'Mia', 'Lucas', 'Isabella'],
+    'sci-fi': ['Nova', 'Zephyr', 'Astra', 'Atlas', 'Cosmo', 'Stella', 'Phoenix', 'Orbit', 'Vega', 'Sirius'],
+    animal: ['Bramble', 'Willow', 'Clover', 'Hazel', 'Aspen', 'Maple', 'Cedar', 'Juniper', 'Birch', 'Fern']
   }
   
-  return namesByGenre[genre] || ['Hero', 'Friend']
+  const pool = namePoolsByGenre[genre] || ['Alex', 'Jordan', 'Sam', 'Riley', 'Morgan', 'Taylor', 'Casey', 'Jamie', 'Avery', 'Quinn'];
+  
+  // Randomly pick 2-3 names from the pool (no duplicates)
+  const count = Math.random() < 0.5 ? 2 : 3;
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count);
 }
 
 /**
