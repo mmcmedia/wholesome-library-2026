@@ -3,7 +3,7 @@
  * Ported from wholesome2.0 pipeline with adaptations for v2026
  */
 
-import { generateStoryDNA, generateChapterContent, parseJSONSafely, estimateTokens } from '../utils/openai'
+import { generateStoryDNA as callOpenAIForDNA, generateChapterContent, parseJSONSafely, estimateTokens } from '../utils/openai'
 import type { PipelineLogger } from '../utils/logger'
 import type { StoryBrief, StoryDNA, Chapter } from '../types/index'
 
@@ -140,7 +140,7 @@ export async function generateChapters(
 /**
  * Stage 1: Generate foundation (world, themes, plot)
  */
-async function generateFoundation(brief: StoryBrief, logger: PipelineLogger): Promise<any> {
+async function generateFoundation(brief: StoryBrief, logger: PipelineLogger): Promise<Record<string, any>> {
   const systemPrompt = `You are a master story architect specializing in wholesome children's literature.
 Create rich, engaging story foundations that are age-appropriate and virtuous.
 Return ONLY valid JSON with no markdown.`
@@ -157,7 +157,7 @@ Include:
 - Clear central conflict and resolution path
 - Four-act emotional journey`
 
-  const response = await generateStoryDNA(systemPrompt, userPrompt)
+  const response = await callOpenAIForDNA(systemPrompt, userPrompt)
   const foundation = parseJSONSafely(response, 'Foundation')
 
   logger.debug('StoryCreator', 'Foundation generated', { keys: Object.keys(foundation) })
@@ -169,9 +169,9 @@ Include:
  */
 async function generateCharactersAndRelationships(
   brief: StoryBrief,
-  foundation: any,
+  foundation: Record<string, any>,
   logger: PipelineLogger
-): Promise<any> {
+): Promise<Record<string, any>> {
   const characterNames = generateDefaultCharacterNames(brief.genre)
 
   const systemPrompt = `You are a character development expert.
@@ -193,7 +193,7 @@ Each character needs:
 
 Also define tensions between characters that drive conflict.`
 
-  const response = await generateStoryDNA(systemPrompt, userPrompt)
+  const response = await callOpenAIForDNA(systemPrompt, userPrompt)
   const charactersData = parseJSONSafely(response, 'Characters & Relationships')
 
   logger.debug('StoryCreator', 'Characters generated', {
@@ -209,10 +209,10 @@ Also define tensions between characters that drive conflict.`
  */
 async function generateChaptersAndContinuity(
   brief: StoryBrief,
-  foundation: any,
-  charactersData: any,
+  foundation: Record<string, any>,
+  charactersData: Record<string, any>,
   logger: PipelineLogger
-): Promise<any> {
+): Promise<Record<string, any>> {
   const systemPrompt = `You are a story continuity expert.
 Create detailed chapter outlines with perfect narrative flow.
 Return ONLY valid JSON with no markdown.`
@@ -233,7 +233,7 @@ Each chapter needs:
 
 Make sure chapters build on each other with proper continuity.`
 
-  const response = await generateStoryDNA(systemPrompt, userPrompt)
+  const response = await callOpenAIForDNA(systemPrompt, userPrompt)
   const chaptersData = parseJSONSafely(response, 'Chapters & Continuity')
 
   logger.debug('StoryCreator', 'Chapters generated', {
@@ -249,7 +249,7 @@ Make sure chapters build on each other with proper continuity.`
  */
 function buildChapterSystemPrompt(dna: StoryDNA, brief: StoryBrief): string {
   const characterList = Object.entries(dna.characters)
-    .map(([name, char]: [string, any]) => `${name} (${char.speechStyle?.patterns?.[0] || 'speaks naturally'})`)
+    .map(([name, char]: [string, Record<string, any>]) => `${name} (${char.speechStyle?.patterns?.[0] || 'speaks naturally'})`)
     .join('\n')
 
   return `You are a wholesome children's story writer.

@@ -27,6 +27,20 @@ import {
 } from '@/components/ui/sheet'
 import { getMockStory, getMockChapters } from '@/lib/mock-data'
 
+/**
+ * Announce message to screen readers
+ */
+function announceToScreenReader(message: string) {
+  const announcer = document.getElementById('screen-reader-announcements')
+  if (announcer) {
+    announcer.textContent = message
+    // Clear after a delay so it can be re-announced
+    setTimeout(() => {
+      announcer.textContent = ''
+    }, 1000)
+  }
+}
+
 export default function StoryReaderPage() {
   const params = useParams()
   const router = useRouter()
@@ -100,6 +114,8 @@ export default function StoryReaderPage() {
     if (!isFirstChapter) {
       setCurrentChapter(currentChapter - 1)
       window.scrollTo({ top: 0, behavior: 'smooth' })
+      // Announce chapter change to screen readers
+      announceToScreenReader(`Chapter ${currentChapter}: ${chapters[currentChapter - 1]?.title}`)
     }
   }
 
@@ -107,8 +123,40 @@ export default function StoryReaderPage() {
     if (!isLastChapter) {
       setCurrentChapter(currentChapter + 1)
       window.scrollTo({ top: 0, behavior: 'smooth' })
+      // Announce chapter change to screen readers
+      announceToScreenReader(`Chapter ${currentChapter + 2}: ${chapters[currentChapter + 1]?.title}`)
     }
   }
+
+  const changeFontSize = () => {
+    const sizes: Array<'small' | 'medium' | 'large'> = ['small', 'medium', 'large']
+    const currentIndex = sizes.indexOf(fontSize)
+    const newSize = sizes[(currentIndex + 1) % sizes.length]
+    setFontSize(newSize)
+    announceToScreenReader(`Font size changed to ${newSize}`)
+  }
+
+  // Keyboard shortcuts for navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Arrow keys for chapter navigation
+      if (e.key === 'ArrowLeft' && !isFirstChapter) {
+        e.preventDefault()
+        handlePrevChapter()
+      } else if (e.key === 'ArrowRight' && !isLastChapter) {
+        e.preventDefault()
+        handleNextChapter()
+      }
+      // +/- for font size
+      else if (e.key === '+' || e.key === '=') {
+        e.preventDefault()
+        changeFontSize()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [currentChapter, isFirstChapter, isLastChapter, fontSize])
 
   const handleChapterSelect = (index: number) => {
     setCurrentChapter(index)
@@ -118,6 +166,15 @@ export default function StoryReaderPage() {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${bgClass}`}>
+      {/* Screen reader announcements */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+        id="screen-reader-announcements"
+      />
+
       {/* Header with Controls */}
       <div className={`sticky top-16 z-40 border-b ${darkMode ? 'border-white/10 bg-charcoal' : 'border-charcoal/10 bg-white'} shadow-sm`}>
         <div className="container mx-auto px-4 py-3 flex items-center justify-between max-w-4xl">
@@ -227,17 +284,19 @@ export default function StoryReaderPage() {
         )}
 
         {/* Chapter Title */}
-        <div className="mb-6">
+        <header className="mb-6">
           <div className={`text-sm font-medium mb-2 ${mutedTextClass}`}>
             Chapter {chapter.chapterNumber} of {chapters.length}
           </div>
-          <h2 className={`text-2xl md:text-3xl font-bold ${textClass}`}>
+          <h2 id="chapter-title" className={`text-2xl md:text-3xl font-bold ${textClass}`}>
             {chapter.title}
           </h2>
-        </div>
+        </header>
 
         {/* Chapter Content */}
-        <div
+        <article
+          role="article"
+          aria-labelledby="chapter-title"
           className={`prose prose-lg max-w-none ${fontSizeClasses[fontSize]} ${textClass} leading-relaxed`}
           style={{ fontFamily: 'var(--font-poppins)' }}
         >
@@ -246,7 +305,7 @@ export default function StoryReaderPage() {
               {paragraph}
             </p>
           ))}
-        </div>
+        </article>
 
         {/* Chapter Navigation */}
         <div className="mt-12 pt-8 border-t border-charcoal/10 flex justify-between items-center">
