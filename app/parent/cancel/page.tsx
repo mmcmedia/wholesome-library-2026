@@ -94,7 +94,7 @@ export default function CancelSubscriptionPage() {
     setError('')
 
     try {
-      const result = await cancelSubscription(
+      const result = await cancelSubscriptionAction(
         user.id,
         selectedReasons,
         otherReason || undefined
