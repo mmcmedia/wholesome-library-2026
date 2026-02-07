@@ -126,8 +126,8 @@ async function calculateReadingStreak(childIds: string[]): Promise<number> {
       WHERE streak_group = (SELECT MIN(streak_group) FROM streaks LIMIT 1)
     `);
 
-    const row = result.rows[0] as { streak_length: string };
-    return parseInt(row?.streak_length || '0', 10);
+    const rows = result as unknown as Array<{ streak_length: string }>;
+    return parseInt(rows[0]?.streak_length || '0', 10);
   } catch (error) {
     console.error('Error calculating reading streak:', error);
     return 0;
@@ -204,7 +204,8 @@ export async function checkInactivity(): Promise<void> {
       AND c.created_at < ${sevenDaysAgo}
     `);
 
-    for (const row of inactiveChildren.rows) {
+    const rows = inactiveChildren as unknown as Array<any>;
+    for (const row of rows) {
       const inactiveChild = row as {
         id: string;
         name: string;

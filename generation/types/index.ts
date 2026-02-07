@@ -404,14 +404,18 @@ export interface PipelineRunLog {
   duration?: number
   status: 'running' | 'success' | 'failed' | 'partial'
   stages: {
-    dnaGeneration?: StageLog
-    chapterDrafting?: StageLog
-    aiEditor?: StageLog
-    qualityCheck?: StageLog
-    safetyScan?: StageLog
-    valuesCheck?: StageLog
-    coverGeneration?: StageLog
-    databaseSave?: StageLog
+    dnaGeneration?: Partial<StageLog>
+    chapterDrafting?: Partial<StageLog>
+    aiEditor?: Partial<StageLog>
+    polishPass?: Partial<StageLog>
+    qualityCheck?: Partial<StageLog>
+    safetyCheck?: Partial<StageLog>
+    safetyScan?: Partial<StageLog>
+    valuesCheck?: Partial<StageLog>
+    coverGeneration?: Partial<StageLog>
+    coverArt?: Partial<StageLog>
+    databaseSave?: Partial<StageLog>
+    [key: string]: Partial<StageLog> | undefined
   }
   finalStatus: StoryStatus
   errors: string[]

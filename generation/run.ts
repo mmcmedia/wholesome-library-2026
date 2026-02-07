@@ -40,16 +40,13 @@ async function main() {
     const result = await runPipeline(brief);
     
     // Log results
-    if (result.result === 'success') {
+    if (result.status === 'success') {
       console.log('✓ Story generated successfully');
       console.log(`  Story ID: ${result.storyId}`);
-      console.log(`  Quality: ${result.stages.qualityCheck.score}/100`);
-      console.log(`  Safety: ${result.stages.safetyCheck.passed ? 'PASS' : 'FAIL'}`);
-      console.log(`  Values: ${result.stages.valuesCheck.score}/5`);
-      console.log(`  Duration: ${(result.totalDurationMs! / 1000).toFixed(1)}s`);
+      console.log(`  Duration: ${result.duration ? (result.duration / 1000).toFixed(1) : '?'}s`);
     } else {
       console.error('✗ Pipeline failed');
-      console.error(`  Error: ${result.error}`);
+      console.error(`  Errors: ${result.errors.join(', ')}`);
       process.exit(1);
     }
   } catch (error: any) {

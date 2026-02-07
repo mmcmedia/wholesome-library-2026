@@ -74,53 +74,37 @@ export async function runPipeline(brief: StoryBrief): Promise<PipelineRunLog> {
     logger.log('PIPELINE', 'Stage 2: Chapter Drafting with Continuity Tracking');
     const chapterStart = Date.now();
     const chapters = await generateChapters(dna, brief, logger);
-    log.stages.chapterDrafting = {
-      status: 'success',
-      duration: Date.now() - chapterStart,
-      chaptersGenerated: chapters.length,
-    };
+    log.stages.chapterDrafting = createStageLog('Chapter Drafting', chapterStart);
     
     // Stage 3: AI Editor Polish
     logger.log('PIPELINE', 'Stage 3: AI Editor');
     const editorStart = Date.now();
     const { editedChapters, result: editorResult } = await runAIEditor(dna, chapters, logger);
-    log.stages.polishPass = {
-      status: 'success',
-      duration: Date.now() - editorStart,
-    };
+    log.stages.polishPass = createStageLog('AI Editor', editorStart);
     
     // Stage 4: Quality Check
     logger.log('PIPELINE', 'Stage 4: Quality Check');
     const qualityResult = await runQualityCheck(dna, editedChapters, logger);
-    log.stages.qualityCheck = {
-      score: qualityResult.score,
-      passed: qualityResult.passed,
-    };
+    const qualityStart = Date.now();
+    log.stages.qualityCheck = createStageLog('Quality Check', qualityStart);
     
     // Stage 5: Safety Scan
     logger.log('PIPELINE', 'Stage 5: Safety Scan');
+    const safetyStart = Date.now();
     const safetyResult = await runSafetyScan(dna, editedChapters, logger);
-    log.stages.safetyCheck = {
-      passed: safetyResult.passed,
-      flags: safetyResult.flags,
-    };
+    log.stages.safetyCheck = createStageLog('Safety Scan', safetyStart);
     
     // Stage 6: Values Check
     logger.log('PIPELINE', 'Stage 6: Values Check');
+    const valuesStart = Date.now();
     const valuesResult = await runValuesCheck(dna, editedChapters, logger);
-    log.stages.valuesCheck = {
-      score: valuesResult.score,
-      passed: valuesResult.passed,
-    };
+    log.stages.valuesCheck = createStageLog('Values Check', valuesStart);
     
     // Stage 7: Cover Art
     logger.log('PIPELINE', 'Stage 7: Cover Generation');
     const coverStart = Date.now();
     const coverResult = await generateCover(dna, logger);
-    log.stages.coverArt = {
-      status: coverResult.success ? (coverResult.fallbackUsed ? 'fallback' : 'success') : 'failed',
-      duration: Date.now() - coverStart,
-    };
+    log.stages.coverArt = createStageLog('Cover Generation', coverStart, coverResult.success ? 'success' : 'failed');
     
     // Determine story status based on QA results
     const status = determineStoryStatus(qualityResult, safetyResult, valuesResult);
@@ -130,16 +114,16 @@ export async function runPipeline(brief: StoryBrief): Promise<PipelineRunLog> {
     log.storyId = storyId;
     
     // Mark brief as completed
-    await markBriefCompleted(brief.id, logger);
+    await markBriefCompleted(brief.id, storyId, logger);
     
-    log.result = 'success';
-    log.completedAt = new Date();
-    log.totalDurationMs = Date.now() - startTime;
+    log.status = 'success';
+    log.endTime = new Date().toISOString();
+    log.duration = Date.now() - startTime;
     
     logger.log('PIPELINE', 'Pipeline completed successfully', {
       storyId,
       status,
-      duration: log.totalDurationMs,
+      duration: log.duration,
     });
     
     return log;
@@ -149,10 +133,10 @@ export async function runPipeline(brief: StoryBrief): Promise<PipelineRunLog> {
     // Mark brief as failed
     await markBriefFailed(brief.id, error.message, logger);
     
-    log.error = error.message;
-    log.result = 'failed';
-    log.completedAt = new Date();
-    log.totalDurationMs = Date.now() - startTime;
+    log.errors.push(error.message);
+    log.status = 'failed';
+    log.endTime = new Date().toISOString();
+    log.duration = Date.now() - startTime;
     
     return log;
   }

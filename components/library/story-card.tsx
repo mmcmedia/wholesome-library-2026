@@ -25,22 +25,27 @@ const levelLabels = {
   advanced: 'Advanced',
 }
 
+const genreGradients: Record<string, string> = {
+  Adventure: 'from-teal to-teal-light',
+  Fantasy: 'from-purple-600 to-purple-400',
+  Mystery: 'from-indigo-700 to-indigo-400',
+  Friendship: 'from-pink-600 to-pink-400',
+  'Sci-Fi': 'from-blue-700 to-blue-400',
+  Humor: 'from-amber-600 to-amber-400',
+}
+
 export default function StoryCard({ story }: StoryCardProps) {
+  const gradient = genreGradients[story.genre] || 'from-teal to-teal-light'
+
   return (
     <Link href={`/story/${story.slug}`} aria-label={`Read ${story.title}, a ${story.genre} story about ${story.primaryVirtue}`}>
       <Card className="group overflow-hidden rounded-2xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 cursor-pointer h-full">
-        <div className="aspect-[3/4] relative overflow-hidden bg-gradient-to-br from-teal/20 to-teal/5">
-          {story.coverImageUrl ? (
-            <img
-              src={story.coverImageUrl}
-              alt={`Cover art for ${story.title}: ${story.blurb.substring(0, 100)}`}
-              className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center" aria-hidden="true">
-              <BookOpen className="w-20 h-20 text-teal/40" aria-hidden="true" />
-            </div>
-          )}
+        <div className="aspect-[3/4] relative overflow-hidden">
+          <div className={`w-full h-full flex items-center justify-center p-6 bg-gradient-to-br ${gradient}`}>
+            <span className="text-white text-xl font-bold text-center leading-tight drop-shadow-lg">
+              {story.title}
+            </span>
+          </div>
           <div className="absolute top-3 left-3">
             <Badge className={`${levelColors[story.readingLevel]} border`}>
               {levelLabels[story.readingLevel]}
