@@ -19,6 +19,7 @@ import type {
   CharacterProfile,
   ContinuityRequirements
 } from '../types/index'
+import { validateChapterOutput } from './output-validator'
 
 // OpenAI client singleton
 let openaiClient: OpenAI | null = null
@@ -48,7 +49,7 @@ interface ChapterSummary {
  */
 export async function generateChapters(
   dna: StoryDNA,
-  brief: { reading_level: string; genre: string; primary_virtue: string },
+  brief: { reading_level: string; genre: string; primary_virtue: string; avoid_content?: string[] },
   logger: PipelineLogger
 ): Promise<Chapter[]> {
   logger.log('ChapterGenerator', `Generating ${dna.chapterSpecs.length} chapters with continuity tracking...`)
@@ -73,7 +74,36 @@ export async function generateChapters(
       )
       
       // Generate chapter content
-      const content = await generateChapterContent(systemPrompt, userPrompt, logger)
+      let content = await generateChapterContent(systemPrompt, userPrompt, logger)
+      
+      // Run local output validation FIRST (fast, no API call)
+      const localValidation = validateChapterOutput(
+        content,
+        dna.characters,
+        spec,
+        brief.reading_level
+      )
+      
+      if (!localValidation.passed) {
+        logger.warn('ChapterGenerator', `Local validation failed for chapter ${i + 1}:`, localValidation.violations)
+        
+        // If word count is the issue, regenerate with explicit word count instruction
+        if (localValidation.violations.some(v => v.type === 'word_count')) {
+          const wordCountConstraint = `\n\nCRITICAL: Write EXACTLY ${spec.targetWordCount.target} words. Current attempt was ${content.split(/\s+/).filter(w => w.length > 0).length} words which is wrong.`
+          content = await generateChapterContent(systemPrompt, userPrompt + wordCountConstraint, logger)
+          
+          // Re-validate word count
+          const retryValidation = validateChapterOutput(content, dna.characters, spec, brief.reading_level)
+          if (!retryValidation.passed) {
+            logger.warn('ChapterGenerator', `Chapter ${i + 1} still failed validation after retry, proceeding anyway`)
+          }
+        }
+      }
+      
+      // Log warnings for non-blocking issues
+      localValidation.violations
+        .filter(v => v.severity === 'warning')
+        .forEach(v => logger.warn('ChapterGenerator', `Validation warning: ${v.description}`))
       
       // Validate continuity BEFORE accepting
       const continuityCheck = await validateChapterContinuity(
@@ -88,14 +118,30 @@ export async function generateChapters(
         logger.warn('ChapterGenerator', `Chapter ${i + 1} failed continuity check, regenerating with violations as constraints...`)
         
         // Regenerate with violations as additional constraints
-        const fixedContent = await regenerateWithConstraints(
+        let fixedContent = await regenerateWithConstraints(
           systemPrompt,
           userPrompt,
           continuityCheck.violations,
           logger
         )
         
-        // Validate again
+        // Run local validation on fixed content
+        const fixedLocalValidation = validateChapterOutput(
+          fixedContent,
+          dna.characters,
+          spec,
+          brief.reading_level
+        )
+        
+        if (!fixedLocalValidation.passed) {
+          logger.warn('ChapterGenerator', `Fixed chapter ${i + 1} failed local validation`, fixedLocalValidation.violations)
+        }
+        
+        fixedLocalValidation.violations
+          .filter(v => v.severity === 'warning')
+          .forEach(v => logger.warn('ChapterGenerator', `Fixed validation warning: ${v.description}`))
+        
+        // Validate continuity again
         const secondCheck = await validateChapterContinuity(
           fixedContent,
           dna,
@@ -116,7 +162,7 @@ export async function generateChapters(
         
         // Update tracking
         const ending = extractChapterEnding(fixedContent)
-        const summary = extractChapterSummary(fixedContent)
+        const summary = await extractChapterSummary(fixedContent, spec.chapterNumber, logger)
         chapterSummaries.push({ chapterNumber: spec.chapterNumber, summary, ending })
         previousEnding = ending
       } else {
@@ -126,7 +172,7 @@ export async function generateChapters(
         
         // Update tracking
         const ending = extractChapterEnding(content)
-        const summary = extractChapterSummary(content)
+        const summary = await extractChapterSummary(content, spec.chapterNumber, logger)
         chapterSummaries.push({ chapterNumber: spec.chapterNumber, summary, ending })
         previousEnding = ending
         
@@ -158,14 +204,55 @@ export async function generateChapters(
 }
 
 /**
+ * Get reading level specification (FIX 5)
+ */
+function getReadingLevelSpec(level: string): string {
+  const specs: Record<string, string> = {
+    early: `READING LEVEL: Early Reader (ages 4-7)
+- Vocabulary: simple, common words (max 2 syllables preferred)
+- Sentences: short (5-10 words average), simple structure
+- Paragraphs: 2-3 sentences max
+- No complex metaphors or idioms
+- Dialogue: simple, clear exchanges
+- Chapter length: 400-600 words`,
+    
+    independent: `READING LEVEL: Independent Reader (ages 7-10)
+- Vocabulary: grade-appropriate, occasional challenging words in context
+- Sentences: moderate (8-15 words average), some compound sentences
+- Paragraphs: 3-5 sentences
+- Simple metaphors and common idioms OK
+- Dialogue: natural back-and-forth, some subtext
+- Chapter length: 800-1200 words`,
+    
+    confident: `READING LEVEL: Confident Reader (ages 10-13)
+- Vocabulary: rich, varied, introduce sophisticated words naturally
+- Sentences: varied length (10-20 words average), complex structures OK
+- Paragraphs: 4-6 sentences
+- Metaphors, similes, literary devices encouraged
+- Dialogue: nuanced, characters can be sarcastic or subtle
+- Chapter length: 1000-1500 words`,
+    
+    advanced: `READING LEVEL: Advanced Reader (ages 13+)
+- Vocabulary: no restrictions, context clues for difficult words
+- Sentences: full range of complexity
+- Paragraphs: natural length
+- Full literary techniques
+- Dialogue: sophisticated, layered meaning
+- Chapter length: 1200-2000 words`
+  }
+  return specs[level] || specs.independent
+}
+
+/**
  * Build system prompt with FULL DNA context
  * FIX Bug #1: Character roster with LOCKED pronouns
  * FIX Bug #2: ONLY use these characters rule
  * FIX Bug #3: Speech fingerprints, NO example dialogue
+ * FIX 5: Reading level calibration
  */
 function buildChapterSystemPrompt(
   dna: StoryDNA,
-  brief: { reading_level: string; genre: string; primary_virtue: string }
+  brief: { reading_level: string; genre: string; primary_virtue: string; avoid_content?: string[] }
 ): string {
   // Character roster with LOCKED pronouns (FIX Bug #1)
   const characterRoster = Object.entries(dna.characters)
@@ -183,12 +270,18 @@ function buildChapterSystemPrompt(
     })
     .join('\n')
   
+  // Build avoid_content section (FIX 4)
+  const avoidContentSection = brief.avoid_content && brief.avoid_content.length > 0
+    ? `\n\nCONTENT RESTRICTIONS:\n${brief.avoid_content.map(item => `- Avoid: ${item}`).join('\n')}`
+    : '\n\nCONTENT RESTRICTIONS:\nNone specified.';
+  
   return `You are a wholesome children's story writer.
 Write engaging chapters that are age-appropriate and virtue-focused.
 
-Target audience: ${brief.reading_level} readers
+${getReadingLevelSpec(brief.reading_level)}
+
 Genre: ${brief.genre}
-Primary virtue: ${brief.primary_virtue}
+Primary virtue: ${brief.primary_virtue}${avoidContentSection}
 
 CHARACTERS (LOCKED ROSTER - FIX Bug #1 & #2):
 ${characterRoster}
@@ -261,7 +354,7 @@ Objective: ${spec.coreObjective}
 Main obstacle: ${spec.mainObstacle}
 Emotional focus: ${spec.dominantEmotion} (with ${spec.secondaryEmotion})
 Scene type: ${spec.sceneType}
-Target word count: ${spec.targetWordCount.target}-${spec.targetWordCount.max} words
+WORD COUNT REQUIREMENT: Write ${spec.targetWordCount.target} words (minimum ${spec.targetWordCount.min}, maximum ${spec.targetWordCount.max}). This is enforced — chapters outside this range will be rejected.
 ${previousContext}
 
 ${previousEnding ? `Previous chapter ended: "${previousEnding}"` : ''}
@@ -387,9 +480,14 @@ Check for continuity violations.`
       violations: result.violations || []
     }
   } catch (error) {
-    logger.error('ChapterGenerator', 'Continuity validation failed', error)
-    // If validation fails, assume chapter is OK (fail open)
-    return { passed: true, violations: [] }
+    logger.error('ChapterGenerator', 'Continuity validation failed — marking as UNVALIDATED', error)
+    return { 
+      passed: true, // Still proceed, but flag it
+      violations: [{
+        type: 'validation_error',
+        description: `Continuity validation API call failed: ${error instanceof Error ? error.message : 'unknown error'}. Chapter was NOT validated.`
+      }]
+    }
   }
 }
 
@@ -462,13 +560,34 @@ function extractChapterEnding(content: string): string {
 }
 
 /**
- * Extract chapter summary (2-3 sentence summary)
+ * Extract AI-powered chapter summary (FIX 2)
  */
-function extractChapterSummary(content: string): string {
-  // Simple extraction: first 2-3 sentences or first 150 chars
-  const sentences = content.split(/[.!?]+/).filter((s) => s.trim().length > 0)
-  const firstSentences = sentences.slice(0, 2).join('. ').trim()
-  return firstSentences.substring(0, 150) + (firstSentences.length > 150 ? '...' : '.')
+async function extractChapterSummary(content: string, chapterNumber: number, logger: PipelineLogger): Promise<string> {
+  try {
+    const openai = await getOpenAIClient()
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-5-mini',
+      messages: [
+        { 
+          role: 'developer', 
+          content: 'Summarize this chapter in 2-3 sentences. Focus on: key plot events, what characters learned/discovered, emotional shifts, and any unresolved tensions. Return JSON: {"summary": "..."}' 
+        },
+        { 
+          role: 'user', 
+          content: `Chapter ${chapterNumber}:\n${content}` 
+        }
+      ],
+      // NO temperature for gpt-5-mini!
+      response_format: { type: 'json_object' },
+      max_completion_tokens: 200
+    })
+    
+    const result = JSON.parse(completion.choices[0]?.message?.content || '{}')
+    return result.summary || content.split(/[.!?]+/).slice(0, 2).join('. ').trim() + '.'
+  } catch (error) {
+    logger.warn('ChapterGenerator', `AI summary failed for chapter ${chapterNumber}, using fallback`)
+    return content.split(/[.!?]+/).filter(s => s.trim()).slice(0, 2).join('. ').trim() + '.'
+  }
 }
 
 /**

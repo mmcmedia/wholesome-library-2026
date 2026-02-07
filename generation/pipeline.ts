@@ -40,6 +40,52 @@ function createStageLog(stageName: string, startTime: number, status: 'success' 
 }
 
 /**
+ * Quick safety pre-check on DNA before spending tokens on chapters
+ * Catches obvious issues early (~$0.001 vs wasting ~$0.50 on chapters)
+ */
+async function dnaSafetyPreCheck(dna: any, logger: PipelineLogger): Promise<boolean> {
+  const { getOpenAIClient } = await import('./utils/openai')
+  
+  const prompt = `Quick safety check on this children's story plan.
+Title: ${dna.meta.title}
+Genre: ${dna.meta.genre}
+Age range: ${dna.meta.targetAgeRange}
+Setting: ${dna.worldBible.setting}
+Conflict: ${dna.plotStructure.centralConflict}
+Characters: ${Object.entries(dna.characters).map(([n, c]: [string, any]) => `${n}: ${c.dominantTrait}, flaw: ${c.flaw}`).join('; ')}
+Themes: ${dna.meta.coreThemes.join(', ')}
+
+Is this plan safe and appropriate for children ages ${dna.meta.targetAgeRange}? 
+Check for: violence, scary content, mature themes, inappropriate conflict.
+Return JSON: {"safe": true/false, "concern": "description if not safe"}`
+
+  try {
+    const openai = getOpenAIClient()
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-5-mini',
+      messages: [
+        { role: 'developer', content: 'You are a children\'s content safety reviewer. Be conservative.' },
+        { role: 'user', content: prompt }
+      ],
+      // NO temperature for gpt-5-mini!
+      response_format: { type: 'json_object' },
+      max_completion_tokens: 100
+    })
+    
+    const result = JSON.parse(completion.choices[0]?.message?.content || '{}')
+    
+    if (!result.safe) {
+      logger.error('PIPELINE', `DNA failed safety pre-check: ${result.concern}`)
+    }
+    
+    return result.safe !== false
+  } catch (error) {
+    logger.warn('PIPELINE', 'DNA safety pre-check failed, proceeding anyway', error)
+    return true // Fail open for pre-check (full safety scan comes later)
+  }
+}
+
+/**
  * Run the full pipeline for a single story brief
  */
 export async function runPipeline(brief: StoryBrief): Promise<PipelineRunLog> {
@@ -77,7 +123,12 @@ export async function runPipeline(brief: StoryBrief): Promise<PipelineRunLog> {
     // Stage 2: Chapter Drafting with V3 Continuity Tracking
     logger.log('PIPELINE', 'Stage 2: Chapter Drafting with Continuity Tracking');
     const chapterStart = Date.now();
-    const chapters = await generateChapters(dna, brief, logger);
+    const chapters = await generateChapters(dna, {
+      reading_level: brief.reading_level,
+      genre: brief.genre,
+      primary_virtue: brief.primary_virtue,
+      avoid_content: brief.avoid_content
+    }, logger);
     log.stages.chapterDrafting = createStageLog('Chapter Drafting', chapterStart);
     
     // Stage 3: AI Editor Polish
@@ -113,8 +164,12 @@ export async function runPipeline(brief: StoryBrief): Promise<PipelineRunLog> {
     // Determine story status based on QA results
     const status = determineStoryStatus(qualityResult, safetyResult, valuesResult);
     
+    // Generate AI-powered blurb (FIX 3)
+    logger.log('PIPELINE', 'Generating story blurb...');
+    const blurb = await generateBlurb(dna, editedChapters, logger);
+    
     // Save story to database
-    const storyId = await saveStory(dna, editedChapters, status, qualityResult, safetyResult, valuesResult, coverResult, logger);
+    const storyId = await saveStory(dna, editedChapters, status, qualityResult, safetyResult, valuesResult, coverResult, blurb, logger);
     log.storyId = storyId;
     
     // Mark brief as completed
@@ -158,6 +213,41 @@ export async function runPipeline(brief: StoryBrief): Promise<PipelineRunLog> {
 }
 
 /**
+ * Generate AI-powered story blurb (FIX 3)
+ */
+async function generateBlurb(dna: any, chapters: any[], logger: PipelineLogger): Promise<string> {
+  try {
+    const { getOpenAIClient } = await import('./utils/openai');
+    const openai = getOpenAIClient();
+    
+    const firstChapter = chapters[0]?.content?.substring(0, 500) || '';
+    
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-5-mini',
+      messages: [
+        { 
+          role: 'developer', 
+          content: 'Write a 2-sentence blurb for this children\'s story. Make it enticing for parents browsing a library. No spoilers. Return JSON: {"blurb": "..."}' 
+        },
+        { 
+          role: 'user', 
+          content: `Title: ${dna.meta.title}\nGenre: ${dna.meta.genre}\nCharacters: ${Object.keys(dna.characters).join(', ')}\nSetting: ${dna.worldBible.setting}\nOpening: ${firstChapter}` 
+        }
+      ],
+      // NO temperature for gpt-5-mini!
+      response_format: { type: 'json_object' },
+      max_completion_tokens: 150
+    });
+    
+    const result = JSON.parse(completion.choices[0]?.message?.content || '{}');
+    return result.blurb || dna.hook;
+  } catch (error) {
+    logger.warn('PIPELINE', 'Blurb generation failed, using fallback');
+    return dna.hook;
+  }
+}
+
+/**
  * Determine story status based on QA results
  * Per PRD Section 9.5 (Editor Review Tiers)
  */
@@ -196,19 +286,23 @@ async function saveStory(
   safety: any,
   values: any,
   cover: any,
+  blurb: string,
   logger: PipelineLogger
 ): Promise<string> {
   logger.log('PIPELINE', 'Saving story to database');
   
   const supabase = getSupabaseClient();
   
+  // Generate unique slug
+  const slug = await generateUniqueSlug(dna.meta.title, logger);
+  
   // Insert story
   const { data: story, error: storyError } = await supabase
     .from('stories')
     .insert({
       title: dna.meta.title,
-      slug: slugify(dna.meta.title),
-      blurb: dna.hook,
+      slug,
+      blurb,
       reading_level: dna.meta.readingLevel,
       genre: dna.meta.genre,
       primary_virtue: dna.meta.coreThemes[0],
@@ -233,49 +327,84 @@ async function saveStory(
   
   const storyId = story.id;
   
-  // Insert chapters
-  const chaptersToInsert = chapters.map(ch => ({
-    story_id: storyId,
-    chapter_number: ch.chapterNumber,
-    title: ch.title,
-    content: ch.content,
-    word_count: ch.wordCount,
-  }));
-  
-  const { error: chaptersError } = await supabase
-    .from('chapters')
-    .insert(chaptersToInsert);
-  
-  if (chaptersError) {
-    throw new Error(`Failed to save chapters: ${chaptersError.message}`);
-  }
-  
-  // Insert DNA
-  const { error: dnaError } = await supabase
-    .from('story_dna')
-    .insert({
+  try {
+    // Insert chapters
+    const chaptersToInsert = chapters.map(ch => ({
       story_id: storyId,
-      dna_data: dna,
-      generation_version: dna.version,
-    });
-  
-  if (dnaError) {
-    throw new Error(`Failed to save DNA: ${dnaError.message}`);
+      chapter_number: ch.chapterNumber,
+      title: ch.title,
+      content: ch.content,
+      word_count: ch.wordCount,
+    }));
+    
+    const { error: chaptersError } = await supabase
+      .from('chapters')
+      .insert(chaptersToInsert);
+    
+    if (chaptersError) {
+      throw new Error(`Failed to save chapters: ${chaptersError.message}`);
+    }
+    
+    // Insert DNA
+    const { error: dnaError } = await supabase
+      .from('story_dna')
+      .insert({
+        story_id: storyId,
+        dna_data: dna,
+        generation_version: dna.version,
+      });
+    
+    if (dnaError) {
+      throw new Error(`Failed to save DNA: ${dnaError.message}`);
+    }
+    
+    logger.log('PIPELINE', 'Story saved', { storyId });
+    
+    return storyId;
+  } catch (error) {
+    // Cleanup: delete the story if chapters/DNA fail
+    logger.error('PIPELINE', 'Partial save failed, cleaning up story', error);
+    await supabase.from('stories').delete().eq('id', storyId);
+    throw error;
   }
-  
-  logger.log('PIPELINE', 'Story saved', { storyId });
-  
-  return storyId;
 }
 
 /**
- * Simple slug generator
+ * Generate unique slug with collision detection
  */
-function slugify(text: string): string {
-  return text
+async function generateUniqueSlug(title: string, logger: PipelineLogger): Promise<string> {
+  const supabase = getSupabaseClient()
+  let baseSlug = title
     .toLowerCase()
     .replace(/[^\w\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
-    .trim();
+    .trim()
+    .substring(0, 80) // Limit length
+  
+  let slug = baseSlug
+  let suffix = 1
+  
+  // Check for collisions
+  while (true) {
+    const { data } = await supabase
+      .from('stories')
+      .select('id')
+      .eq('slug', slug)
+      .limit(1)
+    
+    if (!data || data.length === 0) break
+    
+    slug = `${baseSlug}-${suffix}`
+    suffix++
+    
+    if (suffix > 100) {
+      // Fallback to timestamp if too many collisions
+      slug = `${baseSlug}-${Date.now()}`
+      break
+    }
+  }
+  
+  logger.debug('PIPELINE', `Generated unique slug: ${slug}`)
+  return slug
 }
