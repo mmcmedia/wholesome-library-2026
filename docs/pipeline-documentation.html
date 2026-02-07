@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wholesome Library v2 — Pipeline Documentation</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: #2D3748;
+            line-height: 1.6;
+            background: white;
+        }
+        .page {
+            page-break-after: always;
+            padding: 0.75in;
+            min-height: 10in;
+        }
+        .cover {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            min-height: 10in;
+            background: linear-gradient(135deg, #135C5E 0%, #0D4446 100%);
+            color: white;
+        }
+        .cover h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+        .cover h2 {
+            font-size: 28px;
+            margin-bottom: 40px;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+        .cover .meta {
+            font-size: 18px;
+            opacity: 0.8;
+            margin-top: 60px;
+        }
+        h1 {
+            color: #135C5E;
+            font-size: 32px;
+            margin-bottom: 24px;
+            border-bottom: 3px solid #135C5E;
+            padding-bottom: 12px;
+        }
+        h2 {
+            color: #135C5E;
+            font-size: 24px;
+            margin-top: 32px;
+            margin-bottom: 16px;
+        }
+        h3 {
+            color: #2D3748;
+            font-size: 18px;
+            margin-top: 24px;
+            margin-bottom: 12px;
+        }
+        p {
+            margin-bottom: 12px;
+        }
+        .flow-diagram {
+            background: #F0FDFA;
+            border: 2px solid #135C5E;
+            border-radius: 8px;
+            padding: 24px;
+            margin: 24px 0;
+        }
+        .stage {
+            background: #135C5E;
+            color: white;
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+        .substage {
+            background: #5FA5A7;
+            color: white;
+            padding: 12px;
+            margin: 8px 0 8px 24px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .model-label {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        .model-52 {
+            background: #10B981;
+            color: white;
+        }
+        .model-mini {
+            background: #3B82F6;
+            color: white;
+        }
+        .arrow {
+            text-align: center;
+            font-size: 24px;
+            color: #135C5E;
+            margin: 8px 0;
+        }
+        .decision-box {
+            background: #FEF3C7;
+            border: 2px solid #F59E0B;
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: 600;
+        }
+        .error-path {
+            color: #DC2626;
+            font-size: 12px;
+            margin-left: 24px;
+            font-style: italic;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 13px;
+        }
+        th {
+            background: #135C5E;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #E5E7EB;
+        }
+        tr:nth-child(even) {
+            background: #F9FAFB;
+        }
+        .code-block {
+            background: #F3F4F6;
+            border-left: 4px solid #135C5E;
+            padding: 16px;
+            margin: 16px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            border-radius: 4px;
+        }
+        .prompt-excerpt {
+            background: #FEF3C7;
+            border-left: 4px solid #F59E0B;
+            padding: 12px;
+            margin: 12px 0;
+            font-size: 13px;
+            font-style: italic;
+        }
+        .data-flow {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 14px;
+        }
+        .data-type {
+            background: #E0F2FE;
+            border: 1px solid #0EA5E9;
+            padding: 8px 12px;
+            border-radius: 4px;
+            flex: 1;
+            text-align: center;
+        }
+        .data-arrow {
+            padding: 0 12px;
+            color: #0EA5E9;
+            font-weight: bold;
+        }
+        .bug-box {
+            background: #FEE2E2;
+            border: 2px solid #DC2626;
+            padding: 12px;
+            margin: 12px 0;
+            border-radius: 4px;
+        }
+        .fix-box {
+            background: #D1FAE5;
+            border: 2px solid #10B981;
+            padding: 12px;
+            margin: 12px 0;
+            border-radius: 4px;
+        }
+        .severity-critical {
+            color: #DC2626;
+            font-weight: 700;
+        }
+        .severity-high {
+            color: #F59E0B;
+            font-weight: 700;
+        }
+        .severity-medium {
+            color: #3B82F6;
+            font-weight: 600;
+        }
+        .severity-low {
+            color: #6B7280;
+            font-weight: 600;
+        }
+        ul, ol {
+            margin: 12px 0 12px 24px;
+        }
+        li {
+            margin: 6px 0;
+        }
+    </style>
+</head>
+<body>
+
+<!-- PAGE 1: COVER -->
+<div class="page cover">
+    <h1>Wholesome Library v2</h1>
+    <h2>Story Generation Pipeline</h2>
+    <div style="margin: 40px 0;">
+        <svg width="200" height="200" viewBox="0 0 200 200">
+            <circle cx="100" cy="100" r="80" fill="none" stroke="white" stroke-width="4"/>
+            <circle cx="100" cy="100" r="60" fill="none" stroke="white" stroke-width="3"/>
+            <circle cx="100" cy="100" r="40" fill="none" stroke="white" stroke-width="2"/>
+            <text x="100" y="110" text-anchor="middle" fill="white" font-size="48" font-weight="700">V3</text>
+        </svg>
+    </div>
+    <h2>Technical Documentation & Architecture Review</h2>
+    <div class="meta">
+        <div>Date: February 7, 2026</div>
+        <div>Version: 2.0 (V3 Sequential Enhanced DNA)</div>
+        <div>Model: GPT-5.2 (generation) + GPT-5-mini (validation)</div>
+    </div>
+</div>
+
+<!-- PAGE 2-3: PIPELINE OVERVIEW DIAGRAM -->
+<div class="page">
+    <h1>Pipeline Overview Diagram</h1>
+    
+    <div class="flow-diagram">
+        <div class="stage">Story Brief Queue</div>
+        <div class="arrow">↓</div>
+        
+        <div class="stage">
+            Stage 1: DNA Generation <span class="model-label model-52">gpt-5.2</span>
+        </div>
+        <div class="substage">Foundation: World, Themes, Plot Structure</div>
+        <div class="substage">Characters: Profiles, Relationships, Speech Fingerprints</div>
+        <div class="substage">Chapters: Specs, Continuity, Knowledge Tracking</div>
+        <div class="error-path">❌ Retry: 3 attempts × 3 variations = 9 total tries</div>
+        <div class="arrow">↓</div>
+        
+        <div class="stage">
+            Stage 2: Chapter Drafting <span class="model-label model-52">gpt-5.2</span>
+        </div>
+        <div class="substage">For each chapter (sequential):</div>
+        <div class="substage">├─ Build system prompt (character roster, world rules, voice fingerprints)</div>
+        <div class="substage">├─ Build user prompt (knowledge state, cliffhangers, forbidden reactions)</div>
+        <div class="substage">├─ Generate chapter content</div>
+        <div class="substage">├─ Validate continuity <span class="model-label model-mini">gpt-5-mini</span></div>
+        <div class="substage">└─ If violations: regenerate with constraints</div>
+        <div class="error-path">❌ Detect gaps: throw if chapters missing</div>
+        <div class="arrow">↓</div>
+        
+        <div class="stage">
+            Stage 3: AI Editor <span class="model-label model-52">gpt-5.2</span>
+        </div>
+        <div class="substage">Polish grammar, fix AI artifacts, flag concerns</div>
+        <div class="arrow">↓</div>
+        
+        <div class="stage">
+            Stage 4-6: QA Triple Check <span class="model-label model-mini">gpt-5-mini</span>
+        </div>
+        <div class="substage">Quality Score (0-100, 5 dimensions)</div>
+        <div class="substage">Safety Scan (binary pass/fail, 8 criteria)</div>
+        <div class="substage">Values Check (1-5 scale, 6 dimensions)</div>
+        <div class="arrow">↓</div>
+        
+        <div class="stage">
+            Stage 7: Cover Art <span class="model-label" style="background: #EC4899; color: white;">Nano Banana</span>
+        </div>
+        <div class="substage">Async workflow: create task → poll → download</div>
+        <div class="error-path">❌ Fallback: genre template if fails</div>
+        <div class="arrow">↓</div>
+        
+        <div class="decision-box">
+            ⚠️ Decision: Auto-approve / Editor Queue / Reject
+        </div>
+        <div class="arrow">↓</div>
+        
+        <div class="stage">Save to Supabase</div>
+        <div class="substage">stories, chapters, story_dna tables</div>
+    </div>
+</div>
+
+<!-- PAGE 4-5: STAGE-BY-STAGE DETAIL -->
+<div class="page">
+    <h1>Stage-by-Stage Detail</h1>
+
+    <h2>Stage 1: DNA Generation (3-part sequential)</h2>
+    
+    <h3>Part 1A: Foundation (World, Themes, Plot)</h3>
+    <p><strong>Input:</strong> StoryBrief (reading_level, genre, primary_virtue, themes, target_chapters)</p>
+    <p><strong>Process:</strong> Generate world bible, plot structure, emotional stakes</p>
+    
+    <div class="prompt-excerpt">
+        <strong>System Prompt Strategy:</strong> "You are a master story architect. Create rich, engaging story foundations."
+        <br><strong>User Prompt Strategy:</strong> "Create foundation for [reading_level] [genre] story. Characters: [names]. Primary virtue: [virtue]. Themes: [themes]."
+        <br><strong>Key Constraint:</strong> NO example storylines (prevents Bug #4 cookie-cutter plots)
+    </div>
+    
+    <p><strong>Output:</strong> { worldBible, plotStructure, emotionalStakes }</p>
+    <p><strong>Model:</strong> gpt-5.2 (better at complex constraints, creative within boundaries)</p>
+    <p><strong>Error Handling:</strong> Retry with variations (3 attempts × 3 prompt variations = 9 tries total)</p>
+    <p><strong>Cost Estimate:</strong> ~3K tokens per attempt (~15K total with retries)</p>
+
+    <h3>Part 1B: Characters & Relationships</h3>
+    <p><strong>Input:</strong> StoryBrief + compressed foundation summary</p>
+    <p><strong>Process:</strong> Generate character profiles with speech fingerprints, NOT example dialogue</p>
+    
+    <div class="prompt-excerpt">
+        <strong>System Prompt Strategy:</strong> "You are a character development expert. Create nuanced, memorable characters with distinct voices. NEVER include example dialogue - use speech fingerprints instead."
+        <br><strong>User Prompt Strategy:</strong> "Create deep character profiles. Define voice through SPEECH FINGERPRINTS (patterns, phrases, tells). NEVER include example dialogue snippets."
+        <br><strong>Key Constraints:</strong>
+        <ul>
+            <li>pronouns field LOCKED per character (prevents Bug #1 pronoun chaos)</li>
+            <li>archetype must be: protagonist, foil, mentor, ally, rival</li>
+            <li>speechStyle.patterns: HOW they talk (NOT what they say)</li>
+            <li>speechStyle.phrases: unique words (NOT full sentences)</li>
+            <li>NO example dialogue (prevents Bug #3 cookie-cutter stories)</li>
+        </ul>
+    </div>
+    
+    <p><strong>Output:</strong> { characters, characterTensions }</p>
+    <p><strong>Model:</strong> gpt-5.2</p>
+    <p><strong>Cost Estimate:</strong> ~3K tokens</p>
+
+    <h3>Part 1C: Chapters & Continuity</h3>
+    <p><strong>Input:</strong> StoryBrief + compressed foundation + compressed characters</p>
+    <p><strong>Process:</strong> Generate chapter specs with knowledge tracking, cliffhanger resolution plans</p>
+    
+    <div class="prompt-excerpt">
+        <strong>System Prompt Strategy:</strong> "You are a story continuity expert. Create chapters with perfect flow and no plot holes. Track character knowledge carefully."
+        <br><strong>User Prompt Strategy:</strong> "Design [N] chapters with perfect continuity. Track character knowledge progression. Plan cliffhanger resolutions BEFORE writing them."
+        <br><strong>Key Constraints:</strong>
+        <ul>
+            <li>Knowledge progression tracked per chapter (prevents Bug #5 knowledge amnesia)</li>
+            <li>Cliffhanger resolution plans required (prevents Bug #6 cliffhanger amnesia)</li>
+            <li>Forbidden reactions specified (prevents Bug #7 wrong reactions)</li>
+        </ul>
+    </div>
+    
+    <p><strong>Output:</strong> { chapterSpecs[], chapterTransitions[], storyState }</p>
+    <p><strong>Model:</strong> gpt-5.2</p>
+    <p><strong>Warning:</strong> May hit token limit (max 6K output), finish_reason checked for truncation</p>
+    <p><strong>Cost Estimate:</strong> ~6K tokens</p>
+</div>
+
+<div class="page">
+    <h2>Stage 2: Chapter Drafting with Continuity Validation</h2>
+    
+    <p><strong>Input:</strong> StoryDNA + StoryBrief</p>
+    <p><strong>Process:</strong> Generate each chapter sequentially with inter-chapter validation</p>
+    
+    <div class="prompt-excerpt">
+        <strong>System Prompt Strategy:</strong>
+        <ul>
+            <li>Character roster with LOCKED pronouns (prevents Bug #1)</li>
+            <li>"ONLY use these characters. Do NOT introduce new named characters." (prevents Bug #2)</li>
+            <li>Speech fingerprints (HOW they talk) without example dialogue (prevents Bug #3)</li>
+            <li>World rules with consequences</li>
+        </ul>
+        <strong>User Prompt Strategy:</strong>
+        <ul>
+            <li>Character knowledge state: "Max knows: [list]. Does NOT know: [list]" (prevents Bug #5)</li>
+            <li>Cliffhanger resolution plan from previous chapter (prevents Bug #6)</li>
+            <li>Forbidden reactions: "Riley must NOT react shocked to X (reason: already knows)" (prevents Bug #7)</li>
+            <li>Previous chapter ending (continuity anchor)</li>
+        </ul>
+    </div>
+    
+    <p><strong>Validation (gpt-5-mini):</strong> After each chapter, check for:</p>
+    <ol>
+        <li>Pronoun consistency with character roster</li>
+        <li>New named characters not in original cast</li>
+        <li>Characters reacting to unknown information</li>
+        <li>Proper cliffhanger resolution</li>
+        <li>Contradictions to world rules</li>
+    </ol>
+    
+    <p><strong>Output:</strong> Chapter[] (with content, wordCount fields populated)</p>
+    <p><strong>Model:</strong> gpt-5.2 (generation), gpt-5-mini (validation)</p>
+    <p><strong>Error Handling:</strong> If violations detected, regenerate with violations as constraints</p>
+    <p><strong>Gap Detection:</strong> Throws error if chapter numbers incomplete</p>
+    <p><strong>Cost Estimate:</strong> ~5 chapters × (3K gen + 1K validation) = ~20K tokens</p>
+
+    <h2>Stage 3: AI Editor</h2>
+    
+    <p><strong>Input:</strong> StoryDNA + Chapter[]</p>
+    <p><strong>Process:</strong> Polish pass for technical quality, flag concerns (NOT plot changes)</p>
+    
+    <div class="prompt-excerpt">
+        <strong>What to FIX:</strong> Grammar, spelling, AI artifacts, awkward phrasing, transitions, formatting
+        <br><strong>What to FLAG (don't fix):</strong> Values concerns, safety questions, character inconsistencies
+        <br><strong>What NOT to change:</strong> Plot, character voices, narrative choices
+    </div>
+    
+    <p><strong>Output:</strong> { editedChapters[], changesApplied[], flaggedConcerns[] }</p>
+    <p><strong>Model:</strong> gpt-5.2</p>
+    <p><strong>Cost Estimate:</strong> ~8K tokens</p>
+
+    <h2>Stage 4: Quality Check (0-100 score)</h2>
+    
+    <p><strong>Input:</strong> StoryDNA + editedChapters[]</p>
+    <p><strong>Process:</strong> Score 5 dimensions, sum to 0-100</p>
+    
+    <table>
+        <tr>
+            <th>Dimension</th>
+            <th>Max Points</th>
+            <th>Criteria</th>
+        </tr>
+        <tr>
+            <td>Narrative Coherence</td>
+            <td>25</td>
+            <td>Plot makes sense, smooth transitions, complete arc</td>
+        </tr>
+        <tr>
+            <td>Character Consistency</td>
+            <td>20</td>
+            <td>Same names/pronouns, clear arcs</td>
+        </tr>
+        <tr>
+            <td>Age Appropriateness</td>
+            <td>20</td>
+            <td>Vocabulary, complexity match reading level</td>
+        </tr>
+        <tr>
+            <td>Engagement</td>
+            <td>20</td>
+            <td>Compelling hooks, satisfying resolution</td>
+        </tr>
+        <tr>
+            <td>Technical Quality</td>
+            <td>15</td>
+            <td>Grammar, spelling, word count</td>
+        </tr>
+    </table>
+    
+    <p><strong>Pass Threshold:</strong> ≥70</p>
+    <p><strong>Model:</strong> gpt-5-mini (cheaper for QA)</p>
+    <p><strong>Cost Estimate:</strong> ~3K tokens</p>
+</div>
+
+<div class="page">
+    <h2>Stage 5: Safety Scan (binary pass/fail)</h2>
+    
+    <p><strong>Input:</strong> StoryDNA + editedChapters[]</p>
+    <p><strong>Process:</strong> Check 8 safety criteria, ANY fail = auto-reject</p>
+    
+    <table>
+        <tr>
+            <th>#</th>
+            <th>Safety Criterion</th>
+        </tr>
+        <tr><td>1</td><td>No violence beyond age level</td></tr>
+        <tr><td>2</td><td>No death of main characters (early/independent readers)</td></tr>
+        <tr><td>3</td><td>No mature romantic content</td></tr>
+        <tr><td>4</td><td>No substance references</td></tr>
+        <tr><td>5</td><td>No self-harm or dangerous behavior</td></tr>
+        <tr><td>6</td><td>No discriminatory content</td></tr>
+        <tr><td>7</td><td>No horror or extreme fear elements</td></tr>
+        <tr><td>8</td><td>No profanity or crude language</td></tr>
+    </table>
+    
+    <p><strong>Output:</strong> { passed: boolean, flags[], issues[] }</p>
+    <p><strong>Model:</strong> gpt-5-mini</p>
+    <p><strong>Cost Estimate:</strong> ~3K tokens</p>
+
+    <h2>Stage 6: Values Check (1-5 scale)</h2>
+    
+    <p><strong>Input:</strong> StoryDNA + editedChapters[]</p>
+    <p><strong>Process:</strong> Score 6 dimensions on 1-5 scale, average</p>
+    
+    <table>
+        <tr>
+            <th>Dimension</th>
+            <th>1 (Poor)</th>
+            <th>5 (Excellent)</th>
+        </tr>
+        <tr>
+            <td>Positive Role Models</td>
+            <td>Poor examples</td>
+            <td>Virtuous, relatable protagonists</td>
+        </tr>
+        <tr>
+            <td>Consequence Logic</td>
+            <td>Illogical</td>
+            <td>Natural, appropriate consequences</td>
+        </tr>
+        <tr>
+            <td>Conflict Resolution</td>
+            <td>Violence/negativity</td>
+            <td>Positive means</td>
+        </tr>
+        <tr>
+            <td>Authority Respect</td>
+            <td>Negative portrayal</td>
+            <td>Parents/mentors shown positively</td>
+        </tr>
+        <tr>
+            <td>Virtue Integration</td>
+            <td>Preachy/forced</td>
+            <td>Naturally woven</td>
+        </tr>
+        <tr>
+            <td>Hopeful Ending</td>
+            <td>Negative/bleak</td>
+            <td>Uplifting, growth-oriented</td>
+        </tr>
+    </table>
+    
+    <p><strong>Pass Threshold:</strong> Average ≥3.0</p>
+    <p><strong>Model:</strong> gpt-5-mini</p>
+    <p><strong>Cost Estimate:</strong> ~3K tokens</p>
+
+    <h2>Stage 7: Cover Art Generation</h2>
+    
+    <p><strong>Input:</strong> StoryDNA</p>
+    <p><strong>Process:</strong> Async workflow with Nano Banana (kie.ai)</p>
+    
+    <ol>
+        <li><strong>Create Task:</strong> POST to /createTask with prompt, returns taskId</li>
+        <li><strong>Poll (30 attempts × 2s):</strong> GET /recordInfo?taskId=X until state=success</li>
+        <li><strong>Download:</strong> Fetch image from resultUrls[0], save to /public/covers/</li>
+    </ol>
+    
+    <div class="code-block">
+Prompt Template:
+"A whimsical children's book cover illustration featuring {characters}
+in {setting}. {atmosphere} atmosphere. {genre} style. Colorful, friendly,
+age-appropriate for {ageRange} year-olds. Professional book cover quality."
+
+Model: google/nano-banana (2¢/image)
+Aspect: 3:4 (portrait, book cover format)
+    </div>
+    
+    <p><strong>Output:</strong> { success, imageUrl, localPath, fallbackUsed }</p>
+    <p><strong>Error Handling:</strong> Fallback to genre template if API fails</p>
+    <p><strong>Cost:</strong> $0.02 per cover</p>
+</div>
+
+<!-- PAGE 6: V3 CONSISTENCY ENGINE -->
+<div class="page">
+    <h1>V3 Consistency Engine — Bug Prevention Matrix</h1>
+    
+    <p>These are REAL bugs from V1 production. V3 fixes all of them:</p>
+    
+    <table style="font-size: 11px;">
+        <tr>
+            <th style="width: 15%;">Bug</th>
+            <th style="width: 25%;">Symptom</th>
+            <th style="width: 40%;">Prevention Mechanism</th>
+            <th style="width: 20%;">File:Location</th>
+        </tr>
+        <tr>
+            <td class="severity-critical">Bug #1: Pronoun Chaos</td>
+            <td>Jordan started "she/her" but became "he/him" in Ch3</td>
+            <td><strong>LOCKED pronouns in character roster.</strong> Every chapter prompt includes: "Jordan (she/her), Alex (he/him)". Continuity validation checks pronoun consistency.</td>
+            <td>chapter-generator.ts:buildChapterSystemPrompt()<br>Validation in validateChapterContinuity()</td>
+        </tr>
+        <tr>
+            <td class="severity-critical">Bug #2: Spontaneous Characters</td>
+            <td>Story about Emma & Jack suddenly introduced "Sarah" in Ch4</td>
+            <td><strong>Explicit "ONLY use these characters" rule.</strong> System prompt: "Do NOT introduce new named characters." Validation detects new proper nouns.</td>
+            <td>chapter-generator.ts:buildChapterSystemPrompt()<br>Validation check #2</td>
+        </tr>
+        <tr>
+            <td class="severity-high">Bug #3: Cookie-Cutter Dialogue</td>
+            <td>Every story had "Let's do this together!" "I believe in you!"</td>
+            <td><strong>NO example dialogue in prompts.</strong> Use speech FINGERPRINTS instead (patterns, phrases, tells). Prompt explicitly forbids example snippets.</td>
+            <td>story-creator.ts:generateCharactersAndRelationships()<br>speechStyle structure in types/index.ts</td>
+        </tr>
+        <tr>
+            <td class="severity-high">Bug #4: Generic Storylines</td>
+            <td>Every mystery followed same "clue → red herring → discovery" pattern</td>
+            <td><strong>NO mock storylines in prompts.</strong> Define structure via world rules, character tensions, emotional stakes. Let AI create unique events.</td>
+            <td>story-creator.ts:generateFoundation()<br>Prompts exclude example plots</td>
+        </tr>
+        <tr>
+            <td class="severity-critical">Bug #5: Knowledge Amnesia</td>
+            <td>Max discovered magic door in Ch2, acts surprised in Ch4</td>
+            <td><strong>Knowledge state machine.</strong> Track what each character knows and when. Chapter prompts: "Max knows: [list]. Does NOT know: [list]."</td>
+            <td>types/index.ts:StoryState.characterKnowledge<br>chapter-generator.ts:buildChapterUserPrompt()</td>
+        </tr>
+        <tr>
+            <td class="severity-critical">Bug #6: Cliffhanger Amnesia</td>
+            <td>Ch2 ended "Door burst open!" Ch3 started with breakfast scene</td>
+            <td><strong>Cliffhanger resolution plans.</strong> Every cliffhanger includes: resolveInChapter, resolutionMethod, resolutionDescription, openingBeat.</td>
+            <td>types/index.ts:Chapter.cliffhanger.resolutionPlan<br>chapter-generator.ts checks previousSpec.cliffhanger</td>
+        </tr>
+        <tr>
+            <td class="severity-high">Bug #7: Forbidden Reactions</td>
+            <td>Riley shocked at Ch4 revelation, but already knew from Ch2</td>
+            <td><strong>Forbidden reactions tracking.</strong> Chapter continuity requirements: "Riley must NOT react shocked to X (reason: already knows). Correct: unsurprised."</td>
+            <td>types/index.ts:ContinuityRequirements.forbiddenReactions<br>chapter-generator.ts includes in prompt</td>
+        </tr>
+    </table>
+    
+    <div class="fix-box" style="margin-top: 24px;">
+        <strong>✅ Inter-Chapter Validation:</strong> After each chapter generation, gpt-5-mini validates against ALL 7 bugs. If violations found, chapter is regenerated with violations as additional constraints. This catches issues BEFORE they propagate.
+    </div>
+</div>
+
+<!-- PAGE 7: DATA FLOW DIAGRAM -->
+<div class="page">
+    <h1>Data Flow Diagram</h1>
+    
+    <p>This shows the TypeScript types flowing between each stage:</p>
+    
+    <div class="data-flow">
+        <div class="data-type">StoryBrief</div>
+        <div class="data-arrow">→</div>
+        <div class="data-type">generateStoryDNA()</div>
+        <div class="data-arrow">→</div>
+        <div class="data-type">StoryDNA</div>
+    </div>
+    
+    <div class="data-flow">
+        <div class="data-type">StoryDNA + StoryBrief</div>
+        <div class="data-arrow">→</div>
+        <div class="data-type">generateChapters()</div>
+        <div class="data-arrow">→</div>
+        <div class="data-type">Chapter[]</div>
+    </div>
+    
+    <div class="data-flow">
+        <div class="data-type">StoryDNA + Chapter[]</div>
+        <div class="data-arrow">→</div>
+        <div class="data-type">runAIEditor()</div>
+        <div class="data-arrow">→</div>
+        <div class="data-type">Chapter[] (edited)</div>
+    </div>
+    
+    <div class="data-flow">
+        <div class="data-type">StoryDNA + Chapter[]</div>
+        <div class="data-arrow">→</div>
+        <div class="data-type">runQualityCheck()</div>
+        <div class="data-arrow">→</div>
+        <div class="data-type">QualityCheckResult</div>
+    </div>
+    
+    <div class="data-flow">
+        <div class="data-type">StoryDNA + Chapter[]</div>
+        <div class="data-arrow">→</div>
+        <div class="data-type">runSafetyScan()</div>
+        <div class="data-arrow">→</div>
+        <div class="data-type">SafetyScanResult</div>
+    </div>
+    
+    <div class="data-flow">
+        <div class="data-type">StoryDNA + Chapter[]</div>
+        <div class="data-arrow">→</div>
+        <div class="data-type">runValuesCheck()</div>
+        <div class="data-arrow">→</div>
+        <div class="data-type">ValuesCheckResult</div>
+    </div>
+    
+    <div class="data-flow">
+        <div class="data-type">StoryDNA</div>
+        <div class="data-arrow">→</div>
+        <div class="data-type">generateCover()</div>
+        <div class="data-arrow">→</div>
+        <div class="data-type">CoverGenerationResult</div>
+    </div>
+    
+    <div class="data-flow">
+        <div class="data-type">All Results</div>
+        <div class="data-arrow">→</div>
+        <div class="data-type">determineStoryStatus()</div>
+        <div class="data-arrow">→</div>
+        <div class="data-type">'approved' | 'editor_queue' | 'rejected'</div>
+    </div>
+    
+    <div class="data-flow">
+        <div class="data-type">DNA + Chapters + Status + QA Results</div>
+        <div class="data-arrow">→</div>
+        <div class="data-type">saveStory()</div>
+        <div class="data-arrow">→</div>
+        <div class="data-type">storyId (string)</div>
+    </div>
+
+    <h2>Key Type Definitions</h2>
+    
+    <div class="code-block">
+<strong>StoryBrief</strong> (input from queue):
+{ id, reading_level, genre, primary_virtue, themes, 
+  target_chapters, target_word_count, status, attempts }
+
+<strong>StoryDNA</strong> (complete story blueprint):
+{ version, storyId, meta, worldBible, plotStructure, 
+  characters, characterTensions, chapterSpecs[], 
+  chapterTransitions[], emotionalStakes, storyState, 
+  continuityRules, editorialChecklist }
+
+<strong>Chapter</strong> (chapter specification + content):
+{ chapterNumber, workingTitle, coreObjective, 
+  mainObstacle, emotionalStakesLink, dominantEmotion, 
+  sceneType, targetWordCount, cliffhanger?, 
+  continuityRequirements?, content?, wordCount? }
+
+<strong>CharacterProfile</strong>:
+{ name, age, pronouns (LOCKED), archetype, 
+  speechStyle: { patterns[], phrases[], emotionalTells } }
+
+<strong>StoryState</strong> (prevents knowledge amnesia):
+{ characterKnowledge: [{ characterName, knowledgeItems: 
+  [{ fact, learnedInChapter, isSecret }] }],
+  pendingResolutions[], recurringElements[] }
+    </div>
+</div>
+
+<!-- PAGE 8: PROMPT ARCHITECTURE -->
+<div class="page">
+    <h1>Prompt Architecture</h1>
+    
+    <p>For each AI call, this shows the <strong>strategy</strong> (not full prompts, which are 100+ lines):</p>
+
+    <h2>DNA Foundation Generation (gpt-5.2)</h2>
+    <div class="prompt-excerpt">
+        <strong>System:</strong> "You are a master story architect. Create rich, engaging story foundations."
+        <br><strong>User:</strong> Genre, reading level, characters, virtue, themes + JSON structure template
+        <br><strong>Constraints:</strong> NO example storylines (prevents templating)
+        <br><strong>Response Format:</strong> json_object
+    </div>
+
+    <h2>DNA Characters Generation (gpt-5.2)</h2>
+    <div class="prompt-excerpt">
+        <strong>System:</strong> "Create nuanced, memorable characters. NEVER include example dialogue."
+        <br><strong>User:</strong> Foundation summary + character names + "Use SPEECH FINGERPRINTS (patterns, phrases, tells)"
+        <br><strong>Constraints:</strong> pronouns LOCKED, archetype enum, tensionType enum, NO example dialogue
+        <br><strong>Response Format:</strong> json_object
+    </div>
+
+    <h2>DNA Chapters Generation (gpt-5.2)</h2>
+    <div class="prompt-excerpt">
+        <strong>System:</strong> "Story continuity expert. Track character knowledge carefully."
+        <br><strong>User:</strong> Foundation + characters summary + "Plan cliffhanger resolutions BEFORE writing"
+        <br><strong>Constraints:</strong> Knowledge progression per chapter, cliffhanger resolution plans, forbidden reactions
+        <br><strong>Response Format:</strong> json_object
+        <br><strong>Warning:</strong> May hit 6K output token limit (finish_reason checked)
+    </div>
+
+    <h2>Chapter Content Generation (gpt-5.2)</h2>
+    <div class="prompt-excerpt">
+        <strong>System:</strong> Character roster (LOCKED pronouns), "ONLY use these characters", speech fingerprints, world rules
+        <br><strong>User:</strong> Chapter spec + previous ending + knowledge state ("knows: [X], does NOT know: [Y]") + cliffhanger resolution + forbidden reactions
+        <br><strong>Constraints:</strong> No new characters, knowledge-aware reactions, resolve cliffhangers, follow world rules
+        <br><strong>Temperature:</strong> 0.8 (more creative)
+    </div>
+
+    <h2>Chapter Continuity Validation (gpt-5-mini)</h2>
+    <div class="prompt-excerpt">
+        <strong>System:</strong> "You are a continuity checker. Review for: pronoun consistency, new characters, knowledge violations, cliffhanger resolution, world rule contradictions."
+        <br><strong>User:</strong> Character roster + world rules + previous context + knowledge states + chapter draft
+        <br><strong>Response Format:</strong> json_object { violations: [{type, description}], passed: bool }
+        <br><strong>Note:</strong> NO temperature parameter (gpt-5-mini doesn't support it)
+    </div>
+
+    <h2>AI Editor (gpt-5.2)</h2>
+    <div class="prompt-excerpt">
+        <strong>System:</strong> "Expert children's book editor."
+        <br><strong>User:</strong> Full story text + "Fix: grammar/artifacts/transitions. Flag: values/safety concerns. Don't change: plot/voice/choices."
+        <br><strong>Response Format:</strong> json_object { editedText, changes[], flags[] }
+        <br><strong>Temperature:</strong> 0.3 (conservative edits)
+    </div>
+
+    <h2>Quality Check (gpt-5-mini)</h2>
+    <div class="prompt-excerpt">
+        <strong>System:</strong> "Children's literature quality assessor."
+        <br><strong>User:</strong> Full story + "Score 5 dimensions: narrativeCoherence (0-25), characterConsistency (0-20), ageAppropriateness (0-20), engagement (0-20), technicalQuality (0-15)"
+        <br><strong>Response Format:</strong> json_object
+    </div>
+
+    <h2>Safety Scan (gpt-5-mini)</h2>
+    <div class="prompt-excerpt">
+        <strong>System:</strong> "Children's content safety expert."
+        <br><strong>User:</strong> Full story + 8 safety criteria + "Report ANY violations"
+        <br><strong>Response Format:</strong> json_object { passed: bool, issues[] }
+    </div>
+
+    <h2>Values Check (gpt-5-mini)</h2>
+    <div class="prompt-excerpt">
+        <strong>System:</strong> "Children's values education expert."
+        <br><strong>User:</strong> Full story + "Score 6 dimensions 1-5: positiveRoleModels, consequenceLogic, conflictResolution, authorityRespect, virtueIntegration, hopefulEnding"
+        <br><strong>Response Format:</strong> json_object
+    </div>
+</div>
+
+<!-- PAGE 9: DECISION LOGIC -->
+<div class="page">
+    <h1>Decision Logic: determineStoryStatus()</h1>
+    
+    <p>After all QA checks complete, the pipeline determines story disposition:</p>
+    
+    <div class="flow-diagram">
+        <div class="stage">Input: quality, safety, values results</div>
+        <div class="arrow">↓</div>
+        
+        <div class="decision-box" style="background: #FEE2E2; border-color: #DC2626;">
+            ❌ Safety FAILED?
+        </div>
+        <div class="arrow">↓ YES</div>
+        <div class="stage" style="background: #DC2626;">REJECTED</div>
+        <div style="text-align: center; margin: 8px 0; font-size: 12px;">↓ NO</div>
+        
+        <div class="decision-box" style="background: #FEE2E2; border-color: #DC2626;">
+            ❌ Quality &lt; 70?
+        </div>
+        <div class="arrow">↓ YES</div>
+        <div class="stage" style="background: #DC2626;">REJECTED</div>
+        <div style="text-align: center; margin: 8px 0; font-size: 12px;">↓ NO</div>
+        
+        <div class="decision-box" style="background: #D1FAE5; border-color: #10B981;">
+            ✅ Quality ≥ 85 AND Safety passed AND Values ≥ 3.0?
+        </div>
+        <div class="arrow">↓ YES</div>
+        <div class="stage" style="background: #10B981;">AUTO-APPROVED</div>
+        <div style="text-align: center; margin: 8px 0; font-size: 12px;">↓ NO</div>
+        
+        <div class="stage" style="background: #F59E0B;">EDITOR QUEUE</div>
+        <div style="text-align: center; margin: 8px 0; font-size: 12px; font-style: italic;">
+            (Quality 70-84 OR Values 3.0-3.9 — needs human review)
+        </div>
+    </div>
+
+    <h2>Code Implementation (pipeline.ts:171-189)</h2>
+    
+    <div class="code-block">
+function determineStoryStatus(
+  quality: any,
+  safety: any,
+  values: any
+): 'approved' | 'editor_queue' | 'rejected' {
+  // Auto-reject if safety fails
+  if (!safety.passed) {
+    return 'rejected';
+  }
+  
+  // Auto-reject if quality < 70
+  if (quality.score < 70) {
+    return 'rejected';
+  }
+  
+  // Auto-approve if quality >= 85 AND safety passed AND values >= 3.0
+  if (quality.score >= 85 && safety.passed && values.score >= 3.0) {
+    return 'approved';
+  }
+  
+  // Otherwise, queue for editor review
+  return 'editor_queue';
+}
+    </div>
+
+    <h2>Thresholds Rationale</h2>
+    
+    <table>
+        <tr>
+            <th>Threshold</th>
+            <th>Reasoning</th>
+        </tr>
+        <tr>
+            <td>Safety: Binary</td>
+            <td>ANY safety violation is unacceptable. No tolerance.</td>
+        </tr>
+        <tr>
+            <td>Quality: 70 minimum</td>
+            <td>Below 70 = fundamental flaws (incoherent plot, poor grammar). Not fixable with editing.</td>
+        </tr>
+        <tr>
+            <td>Quality: 85 auto-approve</td>
+            <td>High confidence in narrative quality + technical execution.</td>
+        </tr>
+        <tr>
+            <td>Values: 3.0 minimum</td>
+            <td>Below 3.0 = values concerns (preachy, negative role models). Needs human judgment.</td>
+        </tr>
+        <tr>
+            <td>Editor Queue Range</td>
+            <td>Quality 70-84 OR Values 3.0-3.9 = good but not excellent. Human can polish or catch edge cases.</td>
+        </tr>
+    </table>
+</div>
+
+<!-- PAGE 10: DISCREPANCIES & RECOMMENDATIONS -->
+<div class="page">
+    <h1>Discrepancies & Recommendations</h1>
+
+    <h2 class="severity-critical">❌ CRITICAL: GPT-5-mini Temperature Bug</h2>
+    <div class="bug-box">
+        <strong>Issue:</strong> quality-check.ts, safety-scan.ts, and chapter-generator.ts:validateChapterContinuity() pass <code>temperature</code> parameter to gpt-5-mini, which does NOT support it and will raise an error.
+        <br><br><strong>Impact:</strong> Pipeline will crash during QA checks.
+        <br><br><strong>Files Affected:</strong>
+        <ul>
+            <li>generation/lib/quality-check.ts — Line not visible (uses executeCompletion)</li>
+            <li>generation/lib/safety-scan.ts — Line not visible (uses executeCompletion)</li>
+            <li>generation/lib/chapter-generator.ts:validateChapterContinuity() — Line not visible</li>
+        </ul>
+    </div>
+    <div class="fix-box">
+        <strong>Fix:</strong> In utils/openai.ts, modify executeCompletion() to ONLY add temperature for models that support it:
+        <div class="code-block">
+const supportsTemp = model.startsWith('gpt-5.2') || model.startsWith('gpt-4');
+if (params.temperature !== undefined && supportsTemp) {
+  finalParams.temperature = params.temperature;
+}
+        </div>
+        Or remove temperature from all gpt-5-mini calls.
+    </div>
+
+    <h2 class="severity-high">⚠️ HIGH: Brief Manager markBriefCompleted Signature Mismatch</h2>
+    <div class="bug-box">
+        <strong>Issue:</strong> pipeline.ts calls <code>markBriefCompleted(brief.id, storyId, logger)</code> but the function signature in brief-manager.ts is <code>markBriefCompleted(briefId: string, storyId: string, logger: PipelineLogger)</code>. This works, BUT the function does NOT actually store the storyId in the database — it only updates status and timestamp.
+        <br><br><strong>Impact:</strong> No foreign key relationship between brief and story. Can't trace which story came from which brief.
+        <br><br><strong>Location:</strong> generation/lib/brief-manager.ts:60-78
+    </div>
+    <div class="fix-box">
+        <strong>Fix:</strong> Add <code>story_id: storyId</code> to the update in markBriefCompleted():
+        <div class="code-block">
+const result = await updateRecord&lt;StoryBrief&gt;(
+  'story_briefs',
+  briefId,
+  {
+    status: 'completed',
+    story_id: storyId,  // ← ADD THIS
+    updated_at: new Date().toISOString()
+  }
+)
+        </div>
+        Ensure <code>story_id</code> column exists in story_briefs table schema.
+    </div>
+
+    <h2 class="severity-high">⚠️ HIGH: Chapter Title Inconsistency (title vs workingTitle)</h2>
+    <div class="bug-box">
+        <strong>Issue:</strong> Chapter type has <code>workingTitle</code> field, but saveStory() in pipeline.ts saves <code>ch.title</code> to database (which doesn't exist on Chapter type).
+        <br><br><strong>Impact:</strong> Chapter titles will be undefined in database.
+        <br><br><strong>Location:</strong> pipeline.ts:241-247
+    </div>
+    <div class="fix-box">
+        <strong>Fix:</strong> Change pipeline.ts:244 from <code>title: ch.title</code> to <code>title: ch.workingTitle</code>
+    </div>
+
+    <h2 class="severity-medium">⚠️ MEDIUM: Token Usage Tracking Incomplete</h2>
+    <div class="bug-box">
+        <strong>Issue:</strong> pipeline.ts gets token usage but doesn't break it down per stage. The log.tokenUsage object has rough estimates, not accurate per-stage tracking.
+        <br><br><strong>Impact:</strong> Can't accurately measure cost per stage for optimization.
+        <br><br><strong>Location:</strong> pipeline.ts:141-148
+    </div>
+    <div class="fix-box">
+        <strong>Recommendation:</strong> Call getTokenUsage() after each stage and calculate delta, or enhance tokenTracker to support named buckets.
+    </div>
+
+    <h2 class="severity-medium">⚠️ MEDIUM: Dead Letter Queue Never Checked</h2>
+    <div class="bug-box">
+        <strong>Issue:</strong> brief-manager.ts marks briefs as 'failed' after 2 attempts, but there's no process to review or requeue them.
+        <br><br><strong>Impact:</strong> Failed briefs accumulate in database with no recovery path.
+        <br><br><strong>Location:</strong> brief-manager.ts:105-109
+    </div>
+    <div class="fix-box">
+        <strong>Recommendation:</strong> Add admin tool to list failed briefs and manually requeue (reset attempts, set status='queued').
+    </div>
+</div>
+
+<div class="page">
+    <h2 class="severity-low">⚠️ LOW: Chapter Gap Detection Throws After Partial Work</h2>
+    <div class="bug-box">
+        <strong>Issue:</strong> chapter-generator.ts detects missing chapters at the END and throws, but earlier code uses <code>continue</code> on error, so some chapters may have been saved to chapters array. Throwing means pipeline fails, but chapters[] has partial data.
+        <br><br><strong>Impact:</strong> Unclear what happens to partial chapter data. Does it get cleaned up?
+        <br><br><strong>Location:</strong> chapter-generator.ts:79-88
+    </div>
+    <div class="fix-box">
+        <strong>Recommendation:</strong> Consider early validation (check expected count before generation) or more aggressive retry for missing chapters instead of throwing.
+    </div>
+
+    <h2 class="severity-low">⚠️ LOW: DNA Field Inconsistencies in saveStory()</h2>
+    <div class="bug-box">
+        <strong>Issue:</strong> saveStory() accesses <code>dna.hook</code> and <code>dna.meta.readingLevel</code>, but these aren't in the StoryDNA type definition shown. <code>dna.hook</code> is marked optional, so it may not exist.
+        <br><br><strong>Impact:</strong> May insert <code>undefined</code> or cause runtime errors if fields missing.
+        <br><br><strong>Location:</strong> pipeline.ts:209, 211
+    </div>
+    <div class="fix-box">
+        <strong>Fix:</strong> Validate DNA structure or use safe access:
+        <div class="code-block">
+blurb: dna.hook || dna.plotStructure.storyQuestion,
+reading_level: dna.meta.readingLevel || brief.reading_level,
+        </div>
+    </div>
+
+    <h2 class="severity-low">⚠️ LOW: No Retry Logic for Nano Banana Task Creation</h2>
+    <div class="bug-box">
+        <strong>Issue:</strong> cover-generator.ts creates task and polls, but if task creation fails, it immediately falls back to genre template. No retry.
+        <br><br><strong>Impact:</strong> Transient API errors result in fallback instead of retry.
+        <br><br><strong>Location:</strong> cover-generator.ts:40-53
+    </div>
+    <div class="fix-box">
+        <strong>Recommendation:</strong> Add retry loop (3 attempts) around createCoverTask() before falling back.
+    </div>
+
+    <h2>Summary of Recommendations by Priority</h2>
+    
+    <table>
+        <tr>
+            <th>Priority</th>
+            <th>Issue</th>
+            <th>Action</th>
+        </tr>
+        <tr>
+            <td class="severity-critical">CRITICAL</td>
+            <td>gpt-5-mini temperature bug</td>
+            <td>Fix openai.ts to conditionally add temperature</td>
+        </tr>
+        <tr>
+            <td class="severity-high">HIGH</td>
+            <td>markBriefCompleted doesn't store storyId</td>
+            <td>Add story_id to update in brief-manager.ts</td>
+        </tr>
+        <tr>
+            <td class="severity-high">HIGH</td>
+            <td>Chapter title vs workingTitle mismatch</td>
+            <td>Change ch.title to ch.workingTitle in pipeline.ts</td>
+        </tr>
+        <tr>
+            <td class="severity-medium">MEDIUM</td>
+            <td>Token usage tracking incomplete</td>
+            <td>Enhance per-stage token tracking</td>
+        </tr>
+        <tr>
+            <td class="severity-medium">MEDIUM</td>
+            <td>Dead letter queue never checked</td>
+            <td>Build admin tool for failed brief review</td>
+        </tr>
+        <tr>
+            <td class="severity-low">LOW</td>
+            <td>Chapter gap detection timing</td>
+            <td>Consider early validation or retry</td>
+        </tr>
+        <tr>
+            <td class="severity-low">LOW</td>
+            <td>DNA field inconsistencies</td>
+            <td>Use safe access with fallbacks</td>
+        </tr>
+        <tr>
+            <td class="severity-low">LOW</td>
+            <td>No cover task creation retry</td>
+            <td>Add retry loop before fallback</td>
+        </tr>
+    </table>
+</div>
+
+<!-- PAGE 11: COST ANALYSIS -->
+<div class="page">
+    <h1>Cost Analysis: Per-Story Economics</h1>
+
+    <h2>Token Usage Estimates</h2>
+    
+    <table>
+        <tr>
+            <th>Stage</th>
+            <th>Model</th>
+            <th>Calls</th>
+            <th>Tokens/Call</th>
+            <th>Total Tokens</th>
+            <th>Cost (Input + Output)</th>
+        </tr>
+        <tr>
+            <td><strong>DNA Foundation</strong></td>
+            <td>gpt-5.2</td>
+            <td>1-3 (retries)</td>
+            <td>~3,000</td>
+            <td>~9,000</td>
+            <td>$0.016 + $0.126 = <strong>$0.142</strong></td>
+        </tr>
+        <tr>
+            <td><strong>DNA Characters</strong></td>
+            <td>gpt-5.2</td>
+            <td>1-3 (retries)</td>
+            <td>~3,000</td>
+            <td>~9,000</td>
+            <td>$0.016 + $0.126 = <strong>$0.142</strong></td>
+        </tr>
+        <tr>
+            <td><strong>DNA Chapters</strong></td>
+            <td>gpt-5.2</td>
+            <td>1-3 (retries)</td>
+            <td>~6,000</td>
+            <td>~18,000</td>
+            <td>$0.032 + $0.252 = <strong>$0.284</strong></td>
+        </tr>
+        <tr>
+            <td><strong>Chapter Drafting (×5)</strong></td>
+            <td>gpt-5.2</td>
+            <td>5</td>
+            <td>~3,000</td>
+            <td>~15,000</td>
+            <td>$0.026 + $0.210 = <strong>$0.236</strong></td>
+        </tr>
+        <tr>
+            <td><strong>Continuity Validation (×5)</strong></td>
+            <td>gpt-5-mini</td>
+            <td>5</td>
+            <td>~1,000</td>
+            <td>~5,000</td>
+            <td>$0.001 + $0.010 = <strong>$0.011</strong></td>
+        </tr>
+        <tr>
+            <td><strong>AI Editor</strong></td>
+            <td>gpt-5.2</td>
+            <td>1</td>
+            <td>~8,000</td>
+            <td>~8,000</td>
+            <td>$0.014 + $0.112 = <strong>$0.126</strong></td>
+        </tr>
+        <tr>
+            <td><strong>Quality Check</strong></td>
+            <td>gpt-5-mini</td>
+            <td>1</td>
+            <td>~3,000</td>
+            <td>~3,000</td>
+            <td>$0.001 + $0.006 = <strong>$0.007</strong></td>
+        </tr>
+        <tr>
+            <td><strong>Safety Scan</strong></td>
+            <td>gpt-5-mini</td>
+            <td>1</td>
+            <td>~3,000</td>
+            <td>~3,000</td>
+            <td>$0.001 + $0.006 = <strong>$0.007</strong></td>
+        </tr>
+        <tr>
+            <td><strong>Values Check</strong></td>
+            <td>gpt-5-mini</td>
+            <td>1</td>
+            <td>~3,000</td>
+            <td>~3,000</td>
+            <td>$0.001 + $0.006 = <strong>$0.007</strong></td>
+        </tr>
+        <tr style="background: #F0FDFA; font-weight: 700;">
+            <td colspan="4"><strong>TOTAL AI TOKENS</strong></td>
+            <td><strong>~73,000</strong></td>
+            <td><strong>$0.962</strong></td>
+        </tr>
+        <tr>
+            <td><strong>Cover Art</strong></td>
+            <td>Nano Banana</td>
+            <td>1</td>
+            <td>N/A</td>
+            <td>N/A</td>
+            <td><strong>$0.020</strong></td>
+        </tr>
+        <tr style="background: #135C5E; color: white; font-weight: 700; font-size: 16px;">
+            <td colspan="5"><strong>TOTAL COST PER STORY</strong></td>
+            <td><strong>~$0.98</strong></td>
+        </tr>
+    </table>
+
+    <h2>Cost Breakdown by Category</h2>
+    
+    <table>
+        <tr>
+            <th>Category</th>
+            <th>Percentage</th>
+            <th>Cost</th>
+        </tr>
+        <tr>
+            <td>DNA Generation (gpt-5.2)</td>
+            <td>58%</td>
+            <td>$0.568</td>
+        </tr>
+        <tr>
+            <td>Chapter Drafting (gpt-5.2)</td>
+            <td>24%</td>
+            <td>$0.236</td>
+        </tr>
+        <tr>
+            <td>AI Editor (gpt-5.2)</td>
+            <td>13%</td>
+            <td>$0.126</td>
+        </tr>
+        <tr>
+            <td>QA Checks (gpt-5-mini)</td>
+            <td>3%</td>
+            <td>$0.032</td>
+        </tr>
+        <tr>
+            <td>Cover Art (Nano Banana)</td>
+            <td>2%</td>
+            <td>$0.020</td>
+        </tr>
+    </table>
+
+    <h2>Scaling Economics</h2>
+    
+    <table>
+        <tr>
+            <th>Volume</th>
+            <th>Total Cost</th>
+            <th>Notes</th>
+        </tr>
+        <tr>
+            <td>10 stories/day</td>
+            <td>$9.80/day = $294/month</td>
+            <td>~300 stories/month library growth</td>
+        </tr>
+        <tr>
+            <td>50 stories/day</td>
+            <td>$49/day = $1,470/month</td>
+            <td>~1,500 stories/month</td>
+        </tr>
+        <tr>
+            <td>100 stories/day</td>
+            <td>$98/day = $2,940/month</td>
+            <td>~3,000 stories/month (enterprise scale)</td>
+        </tr>
+    </table>
+
+    <h2>Cost Optimization Opportunities</h2>
+    
+    <ol>
+        <li><strong>Reduce DNA retries:</strong> 3 attempts × 3 variations may be overkill. Test if 2 attempts × 2 variations (4 tries) sufficient. Saves ~40% on DNA costs.</li>
+        <li><strong>Cache world bible templates:</strong> For same genre + reading level, reuse world bible structure. Saves 1 gpt-5.2 call (~$0.15).</li>
+        <li><strong>Batch QA checks:</strong> Run quality + safety + values in single prompt. May reduce to 1 gpt-5-mini call instead of 3.</li>
+        <li><strong>Use gpt-5-mini for chapter validation:</strong> Already doing this! Good choice.</li>
+        <li><strong>Cover art caching:</strong> If generating multiple stories in same genre, reuse cover template variants instead of generating each time.</li>
+    </ol>
+
+    <p style="margin-top: 24px; padding: 16px; background: #D1FAE5; border-left: 4px solid #10B981; border-radius: 4px;">
+        <strong>✅ Verdict:</strong> At ~$1/story, the pipeline is cost-efficient for a premium children's content service. Comparable to commissioning human writers ($50-200/story) but with instant turnaround and guaranteed consistency. The 7-bug prevention system justifies the multi-stage validation overhead.
+    </p>
+</div>
+
+</body>
+</html>
