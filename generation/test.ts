@@ -35,9 +35,9 @@ async function test() {
   try {
     const openai = getOpenAIClient();
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-5-mini',
       messages: [{ role: 'user', content: 'Say "test successful" in 2 words' }],
-      max_tokens: 10,
+      max_completion_tokens: 10,
     });
     
     const response = completion.choices[0]?.message?.content;

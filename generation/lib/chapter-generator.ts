@@ -211,7 +211,9 @@ ${Object.entries(dna.worldBible.ruleConsequences || {}).map(([rule, consequence]
 Write naturally, avoiding meta-language, brackets, or instructions.
 Focus on sensory details (${dna.worldBible.sensorySignatures.sight}, ${dna.worldBible.sensorySignatures.sound}).
 Track what each character knows and doesn't know.
-End with natural transition or cliffhanger as specified.`
+End with natural transition or cliffhanger as specified.
+
+Use gpt-5.2 for generation with reasoning_effort: 'medium' for quality.`
 }
 
 /**
@@ -293,7 +295,7 @@ Write the full chapter. No chapter number or title in the text - just the narrat
 }
 
 /**
- * Generate chapter content using gpt-5.2 (or fallback to gpt-4o-mini)
+ * Generate chapter content using gpt-5.2
  */
 async function generateChapterContent(
   systemPrompt: string,
@@ -305,11 +307,12 @@ async function generateChapterContent(
   const completion = await openai.chat.completions.create({
     model: 'gpt-5.2',
     messages: [
-      { role: 'system', content: systemPrompt },
+      { role: 'developer', content: systemPrompt },
       { role: 'user', content: userPrompt }
     ],
     temperature: 0.8,
-    max_tokens: 2000
+    max_completion_tokens: 2000,
+    reasoning_effort: 'medium'
   })
   
   const content = completion.choices[0]?.message?.content || ''
@@ -367,12 +370,13 @@ Check for continuity violations.`
     const completion = await openai.chat.completions.create({
       model: 'gpt-5-mini',
       messages: [
-        { role: 'system', content: systemPrompt },
+        { role: 'developer', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
       response_format: { type: 'json_object' },
       temperature: 0.3,
-      max_tokens: 500
+      max_completion_tokens: 500,
+      reasoning_effort: 'none'
     })
     
     const response = completion.choices[0]?.message?.content || '{}'

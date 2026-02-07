@@ -157,7 +157,7 @@ export async function generateStoryDNA(
     model,
     messages: [
       {
-        role: 'system',
+        role: 'developer',
         content: systemPrompt
       },
       {
@@ -166,7 +166,7 @@ export async function generateStoryDNA(
       }
     ],
     temperature: 0.7,
-    max_tokens: 4000,
+    max_completion_tokens: 4000,
     response_format: { type: 'json_object' }
   })
 }
@@ -183,7 +183,7 @@ export async function generateChapterContent(
     model,
     messages: [
       {
-        role: 'system',
+        role: 'developer',
         content: systemPrompt
       },
       {
@@ -192,7 +192,7 @@ export async function generateChapterContent(
       }
     ],
     temperature: 0.8,
-    max_tokens: 2000
+    max_completion_tokens: 2000
   })
 }
 
@@ -208,7 +208,7 @@ export async function runQACheck(
     model: 'gpt-5-mini',
     messages: [
       {
-        role: 'system',
+        role: 'developer',
         content: systemPrompt
       },
       {
@@ -217,7 +217,7 @@ export async function runQACheck(
       }
     ],
     temperature: 0.2,
-    max_tokens: 1000
+    max_completion_tokens: 1000
   }
 
   if (jsonMode) {

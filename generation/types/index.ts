@@ -444,11 +444,11 @@ export interface DatabaseResult<T> {
 export interface CompletionRequest {
   model: string
   messages: Array<{
-    role: 'system' | 'user' | 'assistant'
+    role: 'developer' | 'user' | 'assistant'
     content: string
   }>
   temperature?: number
-  max_tokens?: number
+  max_completion_tokens?: number
   response_format?: {
     type: 'json_object' | 'text'
   }
