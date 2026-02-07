@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { createCheckoutSession } from '@/lib/stripe';
+import { createCheckoutSession } from '@/lib/creem';
+import { PRODUCTS } from '@/lib/creem';
 
 /**
- * Create Stripe Checkout Session
- * POST /api/stripe/checkout
+ * Create Creem Checkout Session
+ * POST /api/creem/checkout
  * Body: { plan: 'monthly' | 'annual' }
  */
 export async function POST(req: NextRequest) {
@@ -44,17 +45,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Get the product ID based on plan
+    const productId = plan === 'monthly' ? PRODUCTS.MONTHLY : PRODUCTS.ANNUAL;
+
     // Get the base URL for redirect URLs
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const successUrl = `${baseUrl}/subscription/success`;
 
-    // Create Stripe checkout session
-    const { url, sessionId } = await createCheckoutSession({
-      userId: user.id,
-      userEmail: email,
-      plan,
-      successUrl: `${baseUrl}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancelUrl: `${baseUrl}/subscription`,
-    });
+    // Create Creem checkout session
+    const { url, sessionId } = await createCheckoutSession(
+      productId,
+      successUrl,
+      email
+    );
 
     if (!url) {
       return NextResponse.json(

@@ -6,7 +6,12 @@
 import { db } from '@/lib/db';
 import { profiles, children, readingProgress, stories } from '@/lib/db/schema';
 import { eq, and, gte, lt, lte, sql, desc } from 'drizzle-orm';
-import { stripe } from '@/lib/stripe';
+import {
+  getSubscription,
+  pauseSubscription as creemPauseSubscription,
+  resumeSubscription as creemResumeSubscription,
+  cancelSubscription as creemCancelSubscription,
+} from '@/lib/creem';
 import {
   sendTrialEndingEmail,
   sendReEngagementEmail,
@@ -301,7 +306,7 @@ export async function checkWinBack(): Promise<void> {
 
 /**
  * Pause a user's subscription for a specified duration
- * Creates a pause record and updates Stripe subscription
+ * Uses Creem's native pause feature
  */
 export async function pauseSubscription(
   userId: string,
@@ -319,33 +324,25 @@ export async function pauseSubscription(
       .where(eq(profiles.id, userId))
       .limit(1);
 
-    if (!user[0] || !user[0].stripeSubscriptionId) {
+    if (!user[0] || !user[0].creemSubscriptionId) {
       return { success: false, error: 'No active subscription found' };
     }
 
-    // Pause the subscription in Stripe by pausing billing and setting a cancel date
-    // We'll use a pause by setting cancel_at_period_end and then resuming after the pause period
+    // Pause the subscription using Creem's native pause feature
     const resumeDate = new Date();
     resumeDate.setDate(resumeDate.getDate() + durationDays);
+
+    // Call Creem pause endpoint
+    await creemPauseSubscription(user[0].creemSubscriptionId);
 
     // Update profile with pause info
     await db
       .update(profiles)
       .set({
         subscriptionStatus: 'paused',
-        cancelAtPeriodEnd: true,
         updatedAt: new Date(),
       })
       .where(eq(profiles.id, userId));
-
-    // Store pause metadata in a custom field (we'll use metadata on the subscription)
-    // Note: In production, you might want a separate "pauses" table
-    await stripe.subscriptions.update(user[0].stripeSubscriptionId, {
-      metadata: {
-        pausedAt: new Date().toISOString(),
-        pauseResumeDate: resumeDate.toISOString(),
-      },
-    });
 
     return {
       success: true,
@@ -371,7 +368,7 @@ export async function resumeSubscription(userId: string): Promise<{
       .where(eq(profiles.id, userId))
       .limit(1);
 
-    if (!user[0] || !user[0].stripeSubscriptionId) {
+    if (!user[0] || !user[0].creemSubscriptionId) {
       return { success: false, error: 'No paused subscription found' };
     }
 
@@ -380,21 +377,14 @@ export async function resumeSubscription(userId: string): Promise<{
       return { success: false, error: 'Subscription is not paused' };
     }
 
-    // Resume the subscription
-    await stripe.subscriptions.update(user[0].stripeSubscriptionId, {
-      cancel_at_period_end: false,
-      metadata: {
-        pausedAt: null,
-        pauseResumeDate: null,
-      },
-    });
+    // Resume the subscription using Creem's native resume feature
+    await creemResumeSubscription(user[0].creemSubscriptionId);
 
     // Update profile status
     await db
       .update(profiles)
       .set({
         subscriptionStatus: 'active',
-        cancelAtPeriodEnd: false,
         updatedAt: new Date(),
       })
       .where(eq(profiles.id, userId));
@@ -440,7 +430,7 @@ export async function logCancelReason(
 }
 
 /**
- * Process full cancellation: set cancel_at_period_end and send confirmation email
+ * Process full cancellation and send confirmation email
  */
 export async function cancelSubscription(
   userId: string,
@@ -458,32 +448,23 @@ export async function cancelSubscription(
       .where(eq(profiles.id, userId))
       .limit(1);
 
-    if (!user[0] || !user[0].stripeSubscriptionId) {
+    if (!user[0] || !user[0].creemSubscriptionId) {
       return { success: false, error: 'No active subscription found' };
     }
 
     // Get subscription to find period end date
-    const subscription = await stripe.subscriptions.retrieve(
-      user[0].stripeSubscriptionId
-    );
+    const subscription = await getSubscription(user[0].creemSubscriptionId);
 
-    const endDate = new Date(subscription.current_period_end * 1000);
+    const endDate = new Date(subscription.current_period_end);
 
-    // Cancel the subscription
-    await stripe.subscriptions.update(user[0].stripeSubscriptionId, {
-      cancel_at_period_end: true,
-      metadata: {
-        cancelReason: reasons?.join(',') || 'user_initiated',
-        otherReason: otherReason || null,
-      },
-    });
+    // Cancel the subscription using Creem's cancel endpoint
+    await creemCancelSubscription(user[0].creemSubscriptionId);
 
     // Update profile
     await db
       .update(profiles)
       .set({
-        subscriptionStatus: 'cancel_pending',
-        cancelAtPeriodEnd: true,
+        subscriptionStatus: 'cancelled',
         subscriptionPeriodEnd: endDate,
         updatedAt: new Date(),
       })
@@ -526,16 +507,13 @@ export async function getSubscriptionStatus(userId: string) {
       return null;
     }
 
-    if (user[0].stripeSubscriptionId) {
-      const subscription = await stripe.subscriptions.retrieve(
-        user[0].stripeSubscriptionId
-      );
+    if (user[0].creemSubscriptionId) {
+      const subscription = await getSubscription(user[0].creemSubscriptionId);
 
       return {
         plan: user[0].plan,
         status: subscription.status,
-        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-        cancelAtPeriodEnd: subscription.cancel_at_period_end,
+        currentPeriodEnd: new Date(subscription.current_period_end),
         trialEndsAt: user[0].trialEndsAt,
       };
     }
@@ -544,7 +522,6 @@ export async function getSubscriptionStatus(userId: string) {
       plan: user[0].plan,
       status: user[0].subscriptionStatus,
       currentPeriodEnd: user[0].subscriptionPeriodEnd,
-      cancelAtPeriodEnd: user[0].cancelAtPeriodEnd,
       trialEndsAt: user[0].trialEndsAt,
     };
   } catch (error) {

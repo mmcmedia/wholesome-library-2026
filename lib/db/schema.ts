@@ -13,16 +13,20 @@ export const profiles = pgTable('profiles', {
   email: text('email').notNull(),
   displayName: text('display_name'),
   plan: planEnum('plan').default('free'),
+  // Stripe (deprecated - keeping for migration period)
   stripeCustomerId: text('stripe_customer_id'),
   stripeSubscriptionId: text('stripe_subscription_id'),
-  subscriptionStatus: text('subscription_status'), // active, past_due, cancelled, etc.
+  // Creem (new payment processor)
+  creemCustomerId: text('creem_customer_id'),
+  creemSubscriptionId: text('creem_subscription_id'),
+  subscriptionStatus: text('subscription_status'), // active, past_due, cancelled, paused, etc.
   subscriptionPeriodEnd: timestamp('subscription_period_end'),
-  cancelAtPeriodEnd: boolean('cancel_at_period_end').default(false),
   trialEndsAt: timestamp('trial_ends_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({
   stripeCustomerIdIdx: index('profiles_stripe_customer_id_idx').on(table.stripeCustomerId),
+  creemCustomerIdIdx: index('profiles_creem_customer_id_idx').on(table.creemCustomerId),
 }));
 
 // Children

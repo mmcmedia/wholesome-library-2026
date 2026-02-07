@@ -14,7 +14,7 @@ export default function SubscriptionPage() {
 
     try {
       // Call the checkout API
-      const response = await fetch('/api/stripe/checkout', {
+      const response = await fetch('/api/creem/checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -28,7 +28,7 @@ export default function SubscriptionPage() {
         throw new Error(data.error || 'Failed to create checkout session');
       }
 
-      // Redirect to Stripe Checkout
+      // Redirect to Creem Checkout
       if (data.url) {
         window.location.href = data.url;
       } else {
