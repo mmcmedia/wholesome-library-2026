@@ -11,8 +11,8 @@
  * - Inter-chapter validation with gpt-5-mini
  */
 
-import OpenAI from 'openai'
 import type { PipelineLogger } from '../utils/logger'
+import { getOpenAIClient } from '../utils/openai'
 import type {
   StoryDNA,
   Chapter,
@@ -20,20 +20,6 @@ import type {
   ContinuityRequirements
 } from '../types/index'
 import { validateChapterOutput } from './output-validator'
-
-// OpenAI client singleton
-let openaiClient: OpenAI | null = null
-
-async function getOpenAIClient(): Promise<OpenAI> {
-  if (!openaiClient) {
-    const apiKey = process.env.OPENAI_API_KEY
-    if (!apiKey) {
-      throw new Error('OpenAI API key not configured. Set OPENAI_API_KEY environment variable.')
-    }
-    openaiClient = new OpenAI({ apiKey })
-  }
-  return openaiClient
-}
 
 /**
  * Chapter summaries tracking (for continuity)
@@ -510,6 +496,7 @@ ${violations.map((v, i) => `${i + 1}. ${v.type}: ${v.description}`).join('\n')}`
       { role: 'developer', content: systemPrompt },
       { role: 'user', content: userPrompt + constraintsPrompt }
     ],
+    temperature: 0.8,
     max_completion_tokens: 2000,
   })
   

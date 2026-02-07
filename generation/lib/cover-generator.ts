@@ -23,7 +23,7 @@ export async function generateCover(
   
   if (!KIE_API_KEY) {
     logger.error('COVER_GENERATION', 'KIE_AI_API_KEY not configured');
-    return useFallbackCover(dna, logger);
+    return await useFallbackCover(dna, logger);
   }
   
   try {
@@ -47,7 +47,7 @@ export async function generateCover(
     };
   } catch (error: any) {
     logger.error('COVER_GENERATION', 'Cover generation failed', error);
-    return useFallbackCover(dna, logger);
+    return await useFallbackCover(dna, logger);
   }
 }
 
@@ -205,25 +205,77 @@ function buildCoverPrompt(dna: StoryDNA): string {
 }
 
 /**
- * Use genre template as fallback
+ * Generate a gradient-based SVG cover as fallback
+ * Produces a real file so there are no broken images
  */
-function useFallbackCover(dna: StoryDNA, logger: PipelineLogger): CoverGenerationResult {
-  logger.log('COVER_GENERATION', 'Using genre template fallback');
+async function useFallbackCover(dna: StoryDNA, logger: PipelineLogger): Promise<CoverGenerationResult> {
+  logger.log('COVER_GENERATION', 'Generating gradient fallback cover');
   
-  const genreCovers: Record<string, string> = {
-    adventure: '/covers/template-adventure.png',
-    fantasy: '/covers/template-fantasy.png',
-    mystery: '/covers/template-mystery.png',
-    friendship: '/covers/template-friendship.png',
-    'sci-fi': '/covers/template-scifi.png',
+  // Genre-specific gradient colors
+  const genreGradients: Record<string, [string, string]> = {
+    adventure: ['#135C5E', '#1FAAAA'],
+    fantasy: ['#7C3AED', '#A78BFA'],
+    mystery: ['#4338CA', '#818CF8'],
+    friendship: ['#DB2777', '#F472B6'],
+    'sci-fi': ['#1D4ED8', '#60A5FA'],
+    animal: ['#059669', '#6EE7B7'],
+    sports: ['#D97706', '#FCD34D'],
+    nature: ['#15803D', '#86EFAC'],
+    humor: ['#EA580C', '#FDBA74'],
+    historical: ['#92400E', '#D6A66B'],
+    'fairy-tale': ['#9333EA', '#D8B4FE'],
+    'everyday-hero': ['#0369A1', '#7DD3FC'],
   };
   
-  const fallbackPath = genreCovers[dna.meta.genre.toLowerCase()] || '/covers/template-default.png';
+  const [color1, color2] = genreGradients[dna.meta.genre.toLowerCase()] || ['#135C5E', '#1FAAAA'];
+  const title = dna.meta.title || 'Untitled Story';
   
-  return {
-    success: true,
-    localPath: fallbackPath,
-    fallbackUsed: true,
-    timestamp: new Date().toISOString(),
-  };
+  // Create SVG cover
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:${color1};stop-opacity:1" />
+      <stop offset="100%" style="stop-color:${color2};stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="600" height="800" fill="url(#bg)" rx="16"/>
+  <text x="300" y="360" font-family="system-ui, sans-serif" font-size="36" font-weight="700" fill="white" text-anchor="middle" opacity="0.95">${escapeXml(title.length > 30 ? title.substring(0, 27) + '...' : title)}</text>
+  <text x="300" y="410" font-family="system-ui, sans-serif" font-size="18" fill="white" text-anchor="middle" opacity="0.7">${escapeXml(dna.meta.genre)}</text>
+  <text x="300" y="700" font-family="system-ui, sans-serif" font-size="14" fill="white" text-anchor="middle" opacity="0.5">Wholesome Library</text>
+</svg>`;
+  
+  try {
+    const filename = `cover-${dna.storyId}-fallback.svg`;
+    const dir = join(process.cwd(), 'public', 'covers');
+    await mkdir(dir, { recursive: true });
+    const localPath = join(dir, filename);
+    await writeFile(localPath, svg);
+    
+    return {
+      success: true,
+      localPath: `/covers/${filename}`,
+      fallbackUsed: true,
+      timestamp: new Date().toISOString(),
+    };
+  } catch (error) {
+    logger.error('COVER_GENERATION', 'Even fallback cover failed', error);
+    return {
+      success: false,
+      fallbackUsed: true,
+      timestamp: new Date().toISOString(),
+      error: 'Cover generation completely failed',
+    };
+  }
+}
+
+/**
+ * Escape XML special characters for SVG text
+ */
+function escapeXml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
 }

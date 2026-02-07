@@ -94,25 +94,43 @@ Return JSON:
 
 /**
  * Parse edited text back into chapter objects
+ * Handles multiple heading formats (# Chapter N:, ## Chapter N:, Chapter N:)
  */
 function parseEditedText(editedText: string, originalChapters: Chapter[]): Chapter[] {
-  // Split on chapter markers
-  const chapterSections = editedText.split(/# Chapter \d+:/);
+  // Try multiple split patterns (AI may format differently)
+  let chapterSections = editedText.split(/#{1,3}\s*Chapter\s+\d+\s*:/i);
+  
+  // If split didn't produce enough sections, try without hash marks
+  if (chapterSections.length < originalChapters.length + 1) {
+    chapterSections = editedText.split(/Chapter\s+\d+\s*:/i);
+  }
+  
+  // If still not enough sections, log warning and return originals with whatever edits we can salvage
+  if (chapterSections.length < originalChapters.length + 1) {
+    console.warn(`[AI_EDITOR] ⚠️ Could not parse edited text into ${originalChapters.length} chapters (got ${chapterSections.length - 1} sections). Using original content.`);
+    return originalChapters;
+  }
   
   const editedChapters: Chapter[] = [];
   
   for (let i = 0; i < originalChapters.length; i++) {
     const original = originalChapters[i];
-    const rawContent = chapterSections[i + 1] || original.content || '';
+    const rawContent = chapterSections[i + 1] || '';
     const editedContent = rawContent
       .split('\n\n---\n\n')[0] // Remove separator
       .trim();
     
-    editedChapters.push({
-      ...original,
-      content: editedContent,
-      wordCount: editedContent.split(/\s+/).length,
-    });
+    // If parsed content is empty or suspiciously short, use original
+    if (!editedContent || editedContent.length < (original.content?.length || 0) * 0.3) {
+      console.warn(`[AI_EDITOR] ⚠️ Chapter ${i + 1} edited content suspiciously short (${editedContent.length} chars vs original ${original.content?.length || 0}). Using original.`);
+      editedChapters.push(original);
+    } else {
+      editedChapters.push({
+        ...original,
+        content: editedContent,
+        wordCount: editedContent.split(/\s+/).length,
+      });
+    }
   }
   
   return editedChapters;

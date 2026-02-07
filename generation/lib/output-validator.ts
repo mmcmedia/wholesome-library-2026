@@ -24,30 +24,37 @@ export function validateChapterOutput(
   const violations: ValidationResult['violations'] = []
   
   // 1. Pronoun consistency check
+  // Strategy: For each character, find sentences where they're the SUBJECT
+  // (name appears early in sentence) and check if the NEXT pronoun matches.
+  // Skip sentences with multiple character names (ambiguous reference).
+  const allCharNames = Object.keys(characters)
+  
   for (const [name, char] of Object.entries(characters)) {
     const pronounParts = char.pronouns.split('/')
     const subjectPronoun = pronounParts[0] // "she", "he", "they"
-    const objectPronoun = pronounParts[1]   // "her", "him", "them"
     
-    // Find sentences mentioning this character by name
     const sentences = content.split(/[.!?]+/)
     for (const sentence of sentences) {
       if (!sentence.includes(name)) continue
       
-      // Check if wrong pronouns appear near the character's name
+      // Skip sentences mentioning multiple characters (pronoun could refer to either)
+      const otherCharsInSentence = allCharNames.filter(n => n !== name && sentence.includes(n))
+      if (otherCharsInSentence.length > 0) continue
+      
+      // Only flag if the character is the SUBJECT (name appears in first half of sentence)
+      const nameIndex = sentence.indexOf(name)
+      if (nameIndex > sentence.length * 0.6) continue
+      
+      // Check pronouns AFTER the name mention
+      const afterName = sentence.substring(nameIndex + name.length)
       const wrongPronouns = getWrongPronouns(subjectPronoun)
       for (const wrong of wrongPronouns) {
-        // Look for wrong pronoun within ~50 chars of name mention
-        const nameIndex = sentence.indexOf(name)
-        const nearbyText = sentence.substring(Math.max(0, nameIndex - 30), nameIndex + name.length + 50)
-        
-        // Simple regex: wrong pronoun as a whole word
         const regex = new RegExp(`\\b${wrong}\\b`, 'i')
-        if (regex.test(nearbyText)) {
+        if (regex.test(afterName)) {
           violations.push({
             type: 'pronoun_mismatch',
-            description: `Possible pronoun mismatch for ${name} (${char.pronouns}): found "${wrong}" near their name`,
-            severity: 'warning' // Warning because context might make it valid
+            description: `Possible pronoun mismatch for ${name} (${char.pronouns}): found "${wrong}" after their name (sole character in sentence)`,
+            severity: 'warning'
           })
         }
       }

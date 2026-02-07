@@ -343,7 +343,7 @@ async function saveStory(
     const chaptersToInsert = chapters.map(ch => ({
       story_id: storyId,
       chapter_number: ch.chapterNumber,
-      title: ch.title,
+      title: ch.workingTitle,
       content: ch.content,
       word_count: ch.wordCount,
     }));

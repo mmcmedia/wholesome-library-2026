@@ -11,8 +11,8 @@
  * Total: 11-14s with high reliability
  */
 
-import OpenAI from 'openai'
 import type { PipelineLogger } from '../utils/logger'
+import { getOpenAIClient } from '../utils/openai'
 import type {
   StoryBrief,
   StoryDNA,
@@ -24,20 +24,6 @@ import type {
   StoryState,
   ContinuityRules
 } from '../types/index'
-
-// OpenAI client singleton
-let openaiClient: OpenAI | null = null
-
-async function getOpenAIClient(): Promise<OpenAI> {
-  if (!openaiClient) {
-    const apiKey = process.env.OPENAI_API_KEY
-    if (!apiKey) {
-      throw new Error('OpenAI API key not configured. Set OPENAI_API_KEY environment variable.')
-    }
-    openaiClient = new OpenAI({ apiKey })
-  }
-  return openaiClient
-}
 
 /**
  * Retry configuration
