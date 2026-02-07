@@ -60,10 +60,9 @@ Return JSON:
   const response = await executeCompletion({
     model: 'gpt-5-mini',
     messages: [
-      { role: 'system', content: 'You are a children\'s values education expert.' },
+      { role: 'developer', content: 'You are a children\'s values education expert.' },
       { role: 'user', content: prompt }
     ],
-    temperature: 0.3,
     response_format: { type: 'json_object' },
   });
   

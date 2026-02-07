@@ -62,11 +62,11 @@ Return JSON:
   const response = await executeCompletion({
     model: 'gpt-5.2',
     messages: [
-      { role: 'system', content: 'You are an expert children\'s book editor.' },
+      { role: 'developer', content: 'You are an expert children\'s book editor.' },
       { role: 'user', content: prompt }
     ],
     temperature: 0.3,
-    max_tokens: 8000,
+    max_completion_tokens: 8000,
     response_format: { type: 'json_object' },
   });
   

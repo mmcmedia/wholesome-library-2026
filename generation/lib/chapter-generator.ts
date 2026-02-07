@@ -213,7 +213,6 @@ Focus on sensory details (${dna.worldBible.sensorySignatures.sight}, ${dna.world
 Track what each character knows and doesn't know.
 End with natural transition or cliffhanger as specified.
 
-Use gpt-5.2 for generation with reasoning_effort: 'medium' for quality.`
 }
 
 /**
@@ -312,7 +311,6 @@ async function generateChapterContent(
     ],
     temperature: 0.8,
     max_completion_tokens: 2000,
-    reasoning_effort: 'medium'
   })
   
   const content = completion.choices[0]?.message?.content || ''
@@ -374,9 +372,7 @@ Check for continuity violations.`
         { role: 'user', content: userPrompt }
       ],
       response_format: { type: 'json_object' },
-      temperature: 0.3,
       max_completion_tokens: 500,
-      reasoning_effort: 'none'
     })
     
     const response = completion.choices[0]?.message?.content || '{}'
@@ -414,11 +410,10 @@ ${violations.map((v, i) => `${i + 1}. ${v.type}: ${v.description}`).join('\n')}`
   const completion = await openai.chat.completions.create({
     model: 'gpt-5.2',
     messages: [
-      { role: 'system', content: systemPrompt },
+      { role: 'developer', content: systemPrompt },
       { role: 'user', content: userPrompt + constraintsPrompt }
     ],
-    temperature: 0.8,
-    max_tokens: 2000
+    max_completion_tokens: 2000,
   })
   
   const content = completion.choices[0]?.message?.content || ''

@@ -307,12 +307,12 @@ Generate a JSON structure with ALL fields exactly as shown:
   const completion = await openai.chat.completions.create({
     model: 'gpt-5.2',
     messages: [
-      { role: 'system', content: systemPrompt },
+      { role: 'developer', content: systemPrompt },
       { role: 'user', content: userPrompt }
     ],
     response_format: { type: 'json_object' },
     temperature: 0.7,
-    max_tokens: 3000
+    max_completion_tokens: 3000,
   })
   
   const response = completion.choices[0]?.message?.content || '{}'
@@ -403,7 +403,7 @@ IMPORTANT RULES:
     model: 'gpt-5.2',
     messages: [
       {
-        role: 'system',
+        role: 'developer',
         content: 'You are a character development expert. Create nuanced, memorable characters with distinct voices. NEVER include example dialogue - use speech fingerprints instead.'
       },
       {
@@ -413,7 +413,7 @@ IMPORTANT RULES:
     ],
     response_format: { type: 'json_object' },
     temperature: 0.7,
-    max_tokens: 3000
+    max_completion_tokens: 3000,
   })
   
   const response = completion.choices[0]?.message?.content || '{}'
@@ -524,7 +524,7 @@ CRITICAL REQUIREMENTS:
     model: 'gpt-5.2',
     messages: [
       {
-        role: 'system',
+        role: 'developer',
         content: 'You are a story continuity expert. Create chapters with perfect flow and no plot holes. Track character knowledge carefully.'
       },
       {
@@ -534,7 +534,7 @@ CRITICAL REQUIREMENTS:
     ],
     response_format: { type: 'json_object' },
     temperature: 0.7,
-    max_tokens: 6000
+    max_completion_tokens: 6000,
   })
   
   const response = completion.choices[0]?.message?.content || '{}'
