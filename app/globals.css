@@ -1,10 +1,37 @@
-@tailwind base;
+@import "tailwindcss";
 
 @plugin "tailwindcss-animate";
 
+@theme {
+  /* Custom colors */
+  --color-charcoal: #2D3748;
+  --color-teal-50: #F0FDFA;
+  --color-teal-100: #CCFBF1;
+  --color-teal-200: #99F6E4;
+  --color-teal-300: #5EEAD4;
+  --color-teal-400: #2DD4BF;
+  --color-teal-500: #14B8A6;
+  --color-teal-600: #0D9488;
+  --color-teal-700: #0F766E;
+  --color-teal-800: #115E59;
+  --color-teal-900: #134E4A;
+  --color-teal-950: #042F2E;
+  --color-teal: #135C5E;
+  --color-teal-light: #1A7477;
+  --color-teal-dark: #0D4446;
+  --color-gradient-start: #1FAAAA;
+  --color-gradient-end: #1DDDDC;
+  
+  /* Animations */
+  --animate-float-slow: float 8s ease-in-out infinite;
+  --animate-float-medium: float 6s ease-in-out infinite;
+  --animate-float-fast: float 4s ease-in-out infinite;
+  --animate-slide-up: slide-up 0.3s ease-out forwards;
+  --animate-glow: glow 1.5s ease-in-out infinite;
+  --animate-fade-in: fade-in 0.2s ease-out forwards;
+}
+
 @custom-variant dark (&:is(.dark *));
-@tailwind components;
-@tailwind utilities;
 
 @layer base {
   :root {
@@ -85,6 +112,26 @@
 
 .animate-fadeIn {
   animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes slide-up {
+  0% { transform: translateY(20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes glow {
+  0% { box-shadow: 0 0 0 0 rgba(31, 170, 170, 0.4); }
+  100% { box-shadow: 0 0 20px 10px rgba(31, 170, 170, 0); }
+}
+
+@keyframes fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
 }
 
 /* Custom styles for Wholesome Library */
