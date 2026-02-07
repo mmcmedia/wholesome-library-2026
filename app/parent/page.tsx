@@ -222,6 +222,43 @@ export default function ParentDashboardPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Manage Subscription Section */}
+            <Card className="border-amber-200/50 bg-amber-50/50">
+              <CardHeader>
+                <CardTitle className="text-base">Manage Subscription</CardTitle>
+                <CardDescription>
+                  Pause, upgrade, or cancel your subscription
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <a
+                  href="/parent/pause"
+                  className="block w-full px-4 py-2 text-left text-charcoal hover:bg-white rounded-lg border border-amber-200 transition-colors"
+                >
+                  <div className="font-medium text-sm">Take a Break</div>
+                  <div className="text-xs text-charcoal/60">Pause for 1 month (no charges)</div>
+                </a>
+
+                <a
+                  href="https://billing.stripe.com/p/login/test"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full px-4 py-2 text-left text-charcoal hover:bg-white rounded-lg border border-charcoal/10 transition-colors"
+                >
+                  <div className="font-medium text-sm">Billing Portal</div>
+                  <div className="text-xs text-charcoal/60">Change payment method, view invoices</div>
+                </a>
+
+                <a
+                  href="/parent/cancel"
+                  className="block w-full px-4 py-2 text-left text-red-700 hover:bg-red-50 rounded-lg border border-red-200 transition-colors"
+                >
+                  <div className="font-medium text-sm">Cancel Subscription</div>
+                  <div className="text-xs text-red-600">Access continues until period end</div>
+                </a>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
