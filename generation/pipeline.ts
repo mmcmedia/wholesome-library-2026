@@ -120,6 +120,17 @@ export async function runPipeline(brief: StoryBrief): Promise<PipelineRunLog> {
     const dna = await generateStoryDNA(brief, logger);
     log.stages.dnaGeneration = createStageLog('DNA Generation', dnaStart);
     
+    // Pre-check DNA safety before spending tokens on chapters
+    const dnaSafe = await dnaSafetyPreCheck(dna, logger);
+    if (!dnaSafe) {
+      await markBriefFailed(brief.id, 'DNA failed safety pre-check', logger);
+      log.status = 'failed';
+      log.errors.push('DNA failed safety pre-check');
+      log.endTime = new Date().toISOString();
+      log.duration = Date.now() - startTime;
+      return log;
+    }
+    
     // Stage 2: Chapter Drafting with V3 Continuity Tracking
     logger.log('PIPELINE', 'Stage 2: Chapter Drafting with Continuity Tracking');
     const chapterStart = Date.now();

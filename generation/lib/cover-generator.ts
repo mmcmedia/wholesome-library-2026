@@ -159,14 +159,49 @@ async function downloadCover(imageUrl: string, storyId: string, logger: Pipeline
 }
 
 /**
- * Build cover prompt from story DNA
+ * Art direction for consistent library aesthetic
+ */
+const ART_DIRECTION = `Style: Modern children's book illustration, clean digital art with soft textures.
+Color palette: warm and inviting, with rich saturated colors.
+Composition: character-focused with environmental storytelling.
+Mood: whimsical, welcoming, safe.
+NO text, NO words, NO letters on the image.
+Style reference: modern Pixar-meets-picture-book aesthetic, NOT anime, NOT photorealistic.`
+
+/**
+ * Build cover prompt from story DNA with consistent art direction
  */
 function buildCoverPrompt(dna: StoryDNA): string {
-  const characters = Object.keys(dna.characters).slice(0, 2).join(' and ');
-  const setting = dna.worldBible.setting;
-  const mood = dna.worldBible.atmosphere;
+  const characters = Object.entries(dna.characters).slice(0, 2)
+    .map(([name, char]) => {
+      const appearance = char.appearance?.look || 'a young person'
+      return `${name} (${appearance})`
+    })
+    .join(' and ')
   
-  return `A whimsical children's book cover illustration featuring ${characters} in ${setting}. ${mood} atmosphere. ${dna.meta.genre} style. Colorful, friendly, age-appropriate for ${dna.meta.targetAgeRange} year-olds. Professional book cover quality.`;
+  const setting = dna.worldBible.setting
+  const mood = dna.worldBible.atmosphere
+  const genre = dna.meta.genre
+  
+  // Genre-specific scene suggestions
+  const genreScenes: Record<string, string> = {
+    adventure: 'standing at the threshold of discovery, looking ahead with determination',
+    fantasy: 'surrounded by subtle magical elements, wonder on their face',
+    mystery: 'examining a curious clue, spotlight of discovery',
+    friendship: 'together sharing a meaningful moment',
+    'sci-fi': 'in a futuristic environment with glowing technology',
+    animal: 'alongside their animal companion in nature',
+    sports: 'in an active, dynamic pose showing determination',
+    nature: 'immersed in a beautiful natural landscape',
+    humor: 'in a playful, lighthearted scene with visual comedy',
+    historical: 'in a richly detailed period setting',
+    'fairy-tale': 'in an enchanted, storybook-perfect scene',
+    'everyday-hero': 'doing something brave in an ordinary setting'
+  }
+  
+  const scene = genreScenes[genre] || 'in the middle of their adventure'
+  
+  return `Children's book cover illustration: ${characters} ${scene}, set in ${setting}. ${mood} atmosphere. ${ART_DIRECTION}`
 }
 
 /**

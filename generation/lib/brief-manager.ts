@@ -9,18 +9,25 @@ import type { StoryBrief } from '../types/index'
 
 /**
  * Variety matrix for auto-generating briefs
+ * Expanded for greater story diversity
  */
 const VARIETY_MATRIX = {
   readingLevels: ['early', 'independent', 'confident', 'advanced'] as const,
-  genres: ['adventure', 'fantasy', 'mystery', 'friendship', 'sci-fi', 'animal'],
-  virtues: ['courage', 'kindness', 'honesty', 'perseverance', 'gratitude', 'teamwork'],
+  genres: [
+    'adventure', 'fantasy', 'mystery', 'friendship', 'sci-fi', 'animal',
+    'sports', 'nature', 'humor', 'historical', 'fairy-tale', 'everyday-hero'
+  ],
+  virtues: [
+    'courage', 'kindness', 'honesty', 'perseverance', 'gratitude', 'teamwork',
+    'patience', 'forgiveness', 'generosity', 'responsibility', 'respect', 'compassion',
+    'creativity', 'humility', 'self-discipline', 'empathy'
+  ],
   themes: [
-    'discovery and growth',
-    'facing fears',
-    'helping others',
-    'telling the truth',
-    'never giving up',
-    'working together'
+    'discovery and growth', 'facing fears', 'helping others', 'telling the truth',
+    'never giving up', 'working together', 'standing up for others', 'learning from mistakes',
+    'embracing differences', 'finding inner strength', 'the power of friendship',
+    'believing in yourself', 'making amends', 'sharing and generosity',
+    'respecting nature', 'family bonds', 'overcoming jealousy', 'building confidence'
   ]
 }
 
@@ -154,36 +161,79 @@ export async function markBriefFailed(
 }
 
 /**
- * Auto-generate briefs from variety matrix
+ * Helper: Pick least-used option from array, with random tiebreak
+ */
+function pickLeastUsed(options: string[] | readonly string[], counts: Record<string, number>): string {
+  let minCount = Infinity
+  let candidates: string[] = []
+  
+  for (const option of options) {
+    const count = counts[option] || 0
+    if (count < minCount) {
+      minCount = count
+      candidates = [option]
+    } else if (count === minCount) {
+      candidates.push(option)
+    }
+  }
+  
+  return candidates[Math.floor(Math.random() * candidates.length)]
+}
+
+/**
+ * Auto-generate briefs with balanced distribution
+ * Ensures even coverage across genres, virtues, and reading levels
  */
 export async function autoGenerateBriefs(
   count: number,
   logger: PipelineLogger
 ): Promise<string[]> {
-  logger.log('BriefManager', `Auto-generating ${count} briefs from variety matrix...`)
+  logger.log('BriefManager', `Auto-generating ${count} balanced briefs...`)
+
+  // Get existing briefs to avoid duplication
+  const existing = await executeQuery<any[]>(async (client) => {
+    return client.from('story_briefs').select('genre, primary_virtue, reading_level')
+  })
+  
+  const existingCombos = new Set(
+    (existing.data || []).map((b: any) => `${b.genre}|${b.primary_virtue}|${b.reading_level}`)
+  )
 
   const generatedIds: string[] = []
+  
+  // Track what we generate in this batch for balance
+  const batchGenres: Record<string, number> = {}
+  const batchLevels: Record<string, number> = {}
 
   for (let i = 0; i < count; i++) {
-    // Randomly select from variety matrix
-    const readingLevel =
-      VARIETY_MATRIX.readingLevels[Math.floor(Math.random() * VARIETY_MATRIX.readingLevels.length)]
-    const genre =
-      VARIETY_MATRIX.genres[Math.floor(Math.random() * VARIETY_MATRIX.genres.length)]
-    const virtue =
-      VARIETY_MATRIX.virtues[Math.floor(Math.random() * VARIETY_MATRIX.virtues.length)]
-    const theme =
-      VARIETY_MATRIX.themes[Math.floor(Math.random() * VARIETY_MATRIX.themes.length)]
+    // Pick least-used genre and reading level in this batch
+    const genre = pickLeastUsed(VARIETY_MATRIX.genres, batchGenres)
+    const readingLevel = pickLeastUsed([...VARIETY_MATRIX.readingLevels], batchLevels)
+    
+    // Pick virtue that hasn't been combined with this genre
+    let virtue: string
+    let attempts = 0
+    do {
+      virtue = VARIETY_MATRIX.virtues[Math.floor(Math.random() * VARIETY_MATRIX.virtues.length)]
+      attempts++
+    } while (existingCombos.has(`${genre}|${virtue}|${readingLevel}`) && attempts < 20)
+    
+    const theme = VARIETY_MATRIX.themes[Math.floor(Math.random() * VARIETY_MATRIX.themes.length)]
+
+    // Track balance
+    batchGenres[genre] = (batchGenres[genre] || 0) + 1
+    batchLevels[readingLevel] = (batchLevels[readingLevel] || 0) + 1
+    existingCombos.add(`${genre}|${virtue}|${readingLevel}`)
 
     // Create brief
     const brief: Partial<StoryBrief> = {
-      reading_level: readingLevel,
+      reading_level: readingLevel as any,
       genre,
       primary_virtue: virtue,
       themes: [theme],
       avoid_content: [],
       target_chapters: readingLevel === 'early' ? 3 : readingLevel === 'independent' ? 4 : 5,
-      target_word_count: readingLevel === 'early' ? 1800 : readingLevel === 'independent' ? 2500 : 3500,
+      target_word_count: readingLevel === 'early' ? 1800 : readingLevel === 'independent' ? 3200 : readingLevel === 'confident' ? 5000 : 7000,
       status: 'queued',
       attempts: 0,
       created_at: new Date().toISOString(),
@@ -200,10 +250,10 @@ export async function autoGenerateBriefs(
     }
 
     generatedIds.push(result.data.id)
-    logger.log('BriefManager', `Generated brief ${i + 1}/${count}: ${result.data.id}`)
+    logger.log('BriefManager', `Brief ${i + 1}/${count}: ${readingLevel} ${genre} — ${virtue}`)
   }
 
-  logger.log('BriefManager', `Auto-generation complete: ${generatedIds.length} briefs created`)
+  logger.log('BriefManager', `Generated ${generatedIds.length} balanced briefs`)
   return generatedIds
 }
 
@@ -241,4 +291,31 @@ export async function getBriefStats(logger: PipelineLogger): Promise<{
 
   logger.log('BriefManager', 'Brief statistics:', stats)
   return stats
+}
+
+/**
+ * Check if a similar story already exists
+ * Helps prevent duplicate stories in the library
+ */
+export async function checkForDuplicateStory(
+  genre: string,
+  virtue: string,
+  readingLevel: string,
+  logger: PipelineLogger
+): Promise<boolean> {
+  const result = await executeQuery<any[]>(async (client) => {
+    return client
+      .from('stories')
+      .select('id, title, genre, primary_virtue')
+      .eq('genre', genre)
+      .eq('primary_virtue', virtue)
+      .limit(3)
+  })
+  
+  if (result.data && result.data.length >= 3) {
+    logger.warn('BriefManager', `Already have ${result.data.length} ${genre}/${virtue} stories — skipping to avoid duplication`)
+    return true // Duplicate detected
+  }
+  
+  return false
 }
