@@ -199,7 +199,7 @@ export default function LibraryPage() {
             {filteredStories.map((story) => (
               <StoryCard key={story.id} story={story} />
             ))}
-          </div>
+          </section>
         ) : (
           <div className="text-center py-16">
             <p className="text-xl text-charcoal/60 mb-4">
