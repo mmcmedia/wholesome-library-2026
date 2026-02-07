@@ -27,10 +27,10 @@ export default function Navbar() {
         isScrolled ? 'bg-white shadow-md py-3' : 'bg-transparent py-4'
       }`}
     >
-      <nav className="container mx-auto px-4 md:px-8 flex justify-between items-center">
+      <nav className="container mx-auto px-4 md:px-8 flex justify-between items-center" aria-label="Main navigation">
         <div className="flex items-center">
-          <BookOpen className="text-teal h-8 w-8 mr-2" />
-          <Link href="/" className="font-semibold text-2xl text-teal">
+          <BookOpen className="text-teal h-8 w-8 mr-2" aria-hidden="true" />
+          <Link href="/" className="font-semibold text-2xl text-teal" aria-label="Wholesome Library home">
             Wholesome Library
           </Link>
         </div>
@@ -85,7 +85,7 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white shadow-lg">
+        <div className="md:hidden bg-white shadow-lg" role="dialog" aria-label="Mobile navigation menu">
           <div className="flex flex-col space-y-4 px-4 py-6">
             <Link
               href="/library"

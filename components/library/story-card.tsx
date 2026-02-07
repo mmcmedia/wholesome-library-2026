@@ -27,18 +27,18 @@ const levelLabels = {
 
 export default function StoryCard({ story }: StoryCardProps) {
   return (
-    <Link href={`/story/${story.slug}`}>
+    <Link href={`/story/${story.slug}`} aria-label={`Read ${story.title}, a ${story.genre} story about ${story.primaryVirtue}`}>
       <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer h-full">
         <div className="aspect-[3/4] relative overflow-hidden bg-gradient-to-br from-teal/20 to-teal/5">
           {story.coverImageUrl ? (
             <img
               src={story.coverImageUrl}
-              alt={story.title}
+              alt={`Cover art for ${story.title}: ${story.blurb.substring(0, 100)}`}
               className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <BookOpen className="w-20 h-20 text-teal/40" />
+            <div className="w-full h-full flex items-center justify-center" aria-hidden="true">
+              <BookOpen className="w-20 h-20 text-teal/40" aria-hidden="true" />
             </div>
           )}
           <div className="absolute top-3 left-3">
@@ -68,12 +68,12 @@ export default function StoryCard({ story }: StoryCardProps) {
 
           <div className="flex items-center gap-4 text-xs text-charcoal/60">
             <div className="flex items-center gap-1">
-              <BookOpen className="w-3.5 h-3.5" />
+              <BookOpen className="w-3.5 h-3.5" aria-hidden="true" />
               <span>{story.chapterCount} chapters</span>
             </div>
             <div className="flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5" />
-              <span>{story.estimatedReadMinutes} min</span>
+              <Clock className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>{story.estimatedReadMinutes} min read</span>
             </div>
           </div>
         </CardContent>

@@ -8,13 +8,13 @@ export default function Footer() {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="bg-charcoal text-white/80 pt-12 pb-8">
+    <footer className="bg-charcoal text-white/80 pt-12 pb-8" role="contentinfo">
       <div className="container mx-auto px-4 md:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Brand Column */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center mb-4">
-              <BookOpen className="text-teal h-8 w-8 mr-2" />
+              <BookOpen className="text-teal h-8 w-8 mr-2" aria-hidden="true" />
               <span className="font-semibold text-2xl text-white">Wholesome Library</span>
             </div>
             <p className="text-white/70 mb-4 max-w-md">
@@ -26,7 +26,7 @@ export default function Footer() {
           </div>
 
           {/* Quick Links */}
-          <div>
+          <nav aria-label="Footer navigation">
             <h3 className="font-semibold text-white mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li>
@@ -52,28 +52,23 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Legal */}
+          {/* Company & Legal */}
           <div>
-            <h3 className="font-semibold text-white mb-4">Legal</h3>
+            <h3 className="font-semibold text-white mb-4">Company</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/legal/terms" className="hover:text-teal transition-colors">
-                  Terms of Service
+                <Link href="/about" className="hover:text-teal transition-colors">
+                  About Us
                 </Link>
               </li>
               <li>
-                <Link href="/legal/privacy" className="hover:text-teal transition-colors">
+                <Link href="/privacy" className="hover:text-teal transition-colors">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="/legal/children-privacy" className="hover:text-teal transition-colors">
-                  Children's Privacy
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="hover:text-teal transition-colors">
-                  Contact Us
+                <Link href="/terms" className="hover:text-teal transition-colors">
+                  Terms of Service
                 </Link>
               </li>
             </ul>
