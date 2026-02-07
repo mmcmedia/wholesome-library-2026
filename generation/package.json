@@ -1,0 +1,24 @@
+{
+  "name": "wholesome-library-generation",
+  "version": "1.0.0",
+  "description": "Story generation pipeline for Wholesome Library v2",
+  "type": "module",
+  "main": "run.ts",
+  "scripts": {
+    "generate": "tsx run.ts",
+    "auto-generate": "tsx run.ts --auto-generate 10",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "keywords": ["story", "generation", "ai", "children"],
+  "author": "McKinzie Bean",
+  "license": "PRIVATE",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "openai": "^4.67.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}

@@ -3,9 +3,9 @@
  * Per PRD Section 9.1
  */
 
-import { StoryDNA, Chapter, QualityCheckResult } from '../types';
-import { executeCompletion, parseJSONSafely } from '../utils/openai';
-import { PipelineLogger } from '../utils/logger';
+import { StoryDNA, Chapter, QualityCheckResult } from '../types.js';
+import { executeCompletion, parseJSONSafely } from '../utils/openai.js';
+import { PipelineLogger } from '../utils/logger.js';
 
 /**
  * Run automated quality check on story

@@ -14,9 +14,16 @@ export const profiles = pgTable('profiles', {
   displayName: text('display_name'),
   plan: planEnum('plan').default('free'),
   stripeCustomerId: text('stripe_customer_id'),
+  stripeSubscriptionId: text('stripe_subscription_id'),
+  subscriptionStatus: text('subscription_status'), // active, past_due, cancelled, etc.
+  subscriptionPeriodEnd: timestamp('subscription_period_end'),
+  cancelAtPeriodEnd: boolean('cancel_at_period_end').default(false),
+  trialEndsAt: timestamp('trial_ends_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  stripeCustomerIdIdx: index('profiles_stripe_customer_id_idx').on(table.stripeCustomerId),
+}));
 
 // Children
 export const children = pgTable('children', {
