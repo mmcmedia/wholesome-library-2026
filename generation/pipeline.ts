@@ -19,7 +19,7 @@ import { runQualityCheck } from './lib/quality-check';
 import { runSafetyScan } from './lib/safety-scan';
 import { runValuesCheck } from './lib/values-check';
 import { generateCover } from './lib/cover-generator';
-import { getTokenUsage, resetTokenUsage } from './utils/openai';
+import { getTokenUsage, resetTokenUsage, parseJSONSafely } from './utils/openai';
 import type { StageLog } from './types';
 
 /**
@@ -72,7 +72,7 @@ Return JSON: {"safe": true/false, "concern": "description if not safe"}`
       max_completion_tokens: 100
     })
     
-    const result = JSON.parse(completion.choices[0]?.message?.content || '{}')
+    const result = parseJSONSafely<any>(completion.choices[0]?.message?.content || '{}', 'Pipeline')
     
     if (!result.safe) {
       logger.error('PIPELINE', `DNA failed safety pre-check: ${result.concern}`)
@@ -138,7 +138,7 @@ export async function runPipeline(brief: StoryBrief): Promise<PipelineRunLog> {
       reading_level: brief.reading_level,
       genre: brief.genre,
       primary_virtue: brief.primary_virtue,
-      avoid_content: brief.avoid_content
+      avoid_content: brief.avoid_content || []
     }, logger);
     log.stages.chapterDrafting = createStageLog('Chapter Drafting', chapterStart);
     
@@ -250,7 +250,7 @@ async function generateBlurb(dna: any, chapters: any[], logger: PipelineLogger):
       max_completion_tokens: 150
     });
     
-    const result = JSON.parse(completion.choices[0]?.message?.content || '{}');
+    const result = parseJSONSafely<any>(completion.choices[0]?.message?.content || '{}', 'Pipeline');
     return result.blurb || dna.hook;
   } catch (error) {
     logger.warn('PIPELINE', 'Blurb generation failed, using fallback');
@@ -322,7 +322,7 @@ async function saveStory(
       chapter_count: chapters.length,
       total_word_count: chapters.reduce((sum, ch) => sum + ch.wordCount, 0),
       estimated_read_minutes: Math.ceil(chapters.reduce((sum, ch) => sum + ch.wordCount, 0) / 200),
-      cover_image_url: cover.imageUrl,
+      cover_image_url: cover.localPath || cover.imageUrl || null,
       status,
       quality_score: quality.score,
       safety_passed: safety.passed,

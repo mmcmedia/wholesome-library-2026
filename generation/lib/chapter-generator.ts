@@ -12,7 +12,7 @@
  */
 
 import type { PipelineLogger } from '../utils/logger'
-import { getOpenAIClient } from '../utils/openai'
+import { getOpenAIClient, parseJSONSafely } from '../utils/openai'
 import type {
   StoryDNA,
   Chapter,
@@ -288,7 +288,7 @@ CONSEQUENCES if rules are broken:
 ${Object.entries(dna.worldBible.ruleConsequences || {}).map(([rule, consequence]) => `- ${rule}: ${consequence}`).join('\n')}
 
 Write naturally, avoiding meta-language, brackets, or instructions.
-Focus on sensory details (${dna.worldBible.sensorySignatures.sight}, ${dna.worldBible.sensorySignatures.sound}).
+Focus on sensory details (${dna.worldBible.sensorySignatures?.sight || 'visual details'}, ${dna.worldBible.sensorySignatures?.sound || 'ambient sounds'}).
 Track what each character knows and doesn't know.
 End with natural transition or cliffhanger as specified.`
 }
@@ -454,7 +454,7 @@ Check for continuity violations.`
     })
     
     const response = completion.choices[0]?.message?.content || '{}'
-    const result = JSON.parse(response)
+    const result = parseJSONSafely<any>(response, 'ChapterGenerator')
     
     logger.debug('ChapterGenerator', `Continuity check: ${result.passed ? 'PASSED' : 'FAILED'}`, {
       violations: result.violations?.length || 0
@@ -568,7 +568,7 @@ async function extractChapterSummary(content: string, chapterNumber: number, log
       max_completion_tokens: 200
     })
     
-    const result = JSON.parse(completion.choices[0]?.message?.content || '{}')
+    const result = parseJSONSafely<any>(completion.choices[0]?.message?.content || '{}', 'ChapterGenerator')
     return result.summary || content.split(/[.!?]+/).slice(0, 2).join('. ').trim() + '.'
   } catch (error) {
     logger.warn('ChapterGenerator', `AI summary failed for chapter ${chapterNumber}, using fallback`)

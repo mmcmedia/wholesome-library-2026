@@ -79,7 +79,7 @@ Return JSON:
   const passed = average >= 3.0;
   
   logger.log('VALUES_CHECK', 'Values check complete', {
-    score: average.toFixed(2),
+    score: parseFloat(average.toFixed(2)),
     passed,
     flags: scores.flags?.length || 0,
   });

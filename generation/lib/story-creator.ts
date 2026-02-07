@@ -12,7 +12,7 @@
  */
 
 import type { PipelineLogger } from '../utils/logger'
-import { getOpenAIClient } from '../utils/openai'
+import { getOpenAIClient, parseJSONSafely } from '../utils/openai'
 import type {
   StoryBrief,
   StoryDNA,
@@ -221,6 +221,21 @@ function getReadingLevelSpecForDNA(level: string): string {
 }
 
 /**
+ * Get chapter word count targets based on reading level
+ * Ensures DNA chapter specs match the reading level calibration
+ */
+function getChapterWordCountJson(readingLevel: string): string {
+  const counts: Record<string, { min: number; max: number; target: number }> = {
+    early: { min: 400, max: 600, target: 500 },
+    independent: { min: 800, max: 1200, target: 1000 },
+    confident: { min: 1000, max: 1500, target: 1200 },
+    advanced: { min: 1200, max: 2000, target: 1500 }
+  }
+  const wc = counts[readingLevel] || counts.independent
+  return JSON.stringify(wc)
+}
+
+/**
  * Stage 1: Generate Foundation (World, Themes, Plot)
  */
 async function generateFoundation(
@@ -239,7 +254,7 @@ async function generateFoundation(
   ]
   
   // Build avoid_content section (FIX 4)
-  const avoidContentSection = brief.avoid_content.length > 0 
+  const avoidContentSection = brief.avoid_content && brief.avoid_content.length > 0 
     ? `\n\nCONTENT TO AVOID:\n${brief.avoid_content.map(item => `- ${sanitizeInput(item)}`).join('\n')}`
     : '';
   
@@ -333,7 +348,7 @@ Generate a JSON structure with ALL fields exactly as shown:
   const response = completion.choices[0]?.message?.content || '{}'
   logger.debug('StoryCreator', `Stage 1 response length: ${response.length}`)
   
-  const parsed = JSON.parse(response)
+  const parsed = parseJSONSafely<any>(response, 'StoryCreator')
   
   // Validate required fields
   if (!parsed.worldBible || !parsed.plotStructure || !parsed.emotionalStakes) {
@@ -358,7 +373,7 @@ async function generateCharactersAndRelationships(
   const openai = await getOpenAIClient()
   
   // Build avoid_content section (FIX 4)
-  const avoidContentSection = brief.avoid_content.length > 0 
+  const avoidContentSection = brief.avoid_content && brief.avoid_content.length > 0 
     ? `\n\nCONTENT TO AVOID:\n${brief.avoid_content.map(item => `- ${sanitizeInput(item)}`).join('\n')}`
     : '';
   
@@ -442,7 +457,7 @@ IMPORTANT RULES:
   const response = completion.choices[0]?.message?.content || '{}'
   logger.debug('StoryCreator', `Stage 2 response length: ${response.length}`)
   
-  const parsed = JSON.parse(response)
+  const parsed = parseJSONSafely<any>(response, 'StoryCreator')
   
   // Validate required fields
   if (!parsed.characters || !parsed.characterTensions) {
@@ -472,7 +487,7 @@ async function generateChaptersAndContinuity(
   const chapterCount = brief.target_chapters || 5
   
   // Build avoid_content section (FIX 4)
-  const avoidContentSection = brief.avoid_content.length > 0 
+  const avoidContentSection = brief.avoid_content && brief.avoid_content.length > 0 
     ? `\n\nCONTENT TO AVOID:\n${brief.avoid_content.map(item => `- ${sanitizeInput(item)}`).join('\n')}`
     : '';
   
@@ -500,7 +515,7 @@ Generate JSON with exactly ${chapterCount} chapters:
       "worldRuleSpotlight": "Which world rule is featured",
       "sensoryMotifFocus": "sight",
       "sceneType": "discovery",
-      "targetWordCount": { "min": 800, "max": 1200, "target": 1000 },
+      "targetWordCount": ${getChapterWordCountJson(brief.reading_level)},
       "cliffhanger": {
         "type": "discovery",
         "intensity": 8,
@@ -574,10 +589,10 @@ CRITICAL REQUIREMENTS:
   logger.debug('StoryCreator', `Stage 3 response length: ${response.length}, finish_reason: ${finishReason}`)
   
   if (finishReason === 'length') {
-    logger.warn('StoryCreator', 'Stage 3 response was TRUNCATED (hit token limit)')
+    throw new Error('Stage 3 response was TRUNCATED (hit token limit) — increase max_completion_tokens or reduce chapter count')
   }
   
-  const parsed = JSON.parse(response)
+  const parsed = parseJSONSafely<any>(response, 'StoryCreator')
   
   // Validate required fields
   if (!parsed.chapterSpecs || !parsed.chapterTransitions || !parsed.storyState) {

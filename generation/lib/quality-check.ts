@@ -58,13 +58,14 @@ Return JSON:
   
   const scores = parseJSONSafely<any>(response, 'Quality Check');
   
-  const totalScore =
-    scores.narrativeCoherence +
-    scores.characterConsistency +
-    scores.ageAppropriateness +
-    scores.engagement +
-    scores.technicalQuality;
+  // Clamp each dimension to its max before summing
+  const clampedNarrative = Math.min(Math.max(scores.narrativeCoherence || 0, 0), 25);
+  const clampedCharacter = Math.min(Math.max(scores.characterConsistency || 0, 0), 20);
+  const clampedAge = Math.min(Math.max(scores.ageAppropriateness || 0, 0), 20);
+  const clampedEngagement = Math.min(Math.max(scores.engagement || 0, 0), 20);
+  const clampedTechnical = Math.min(Math.max(scores.technicalQuality || 0, 0), 15);
   
+  const totalScore = clampedNarrative + clampedCharacter + clampedAge + clampedEngagement + clampedTechnical;
   const passed = totalScore >= 70;
   
   logger.log('QUALITY_CHECK', 'Quality check complete', {
@@ -76,11 +77,11 @@ Return JSON:
   return {
     score: totalScore,
     dimensions: {
-      narrativeCoherence: scores.narrativeCoherence,
-      characterConsistency: scores.characterConsistency,
-      ageAppropriateness: scores.ageAppropriateness,
-      engagement: scores.engagement,
-      technicalQuality: scores.technicalQuality,
+      narrativeCoherence: clampedNarrative,
+      characterConsistency: clampedCharacter,
+      ageAppropriateness: clampedAge,
+      engagement: clampedEngagement,
+      technicalQuality: clampedTechnical,
     },
     passed,
     flags: scores.flags || [],
