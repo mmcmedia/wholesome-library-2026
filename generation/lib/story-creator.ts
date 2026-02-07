@@ -191,6 +191,11 @@ export async function generateStoryDNA(
       transitionCount: chaptersData.chapterTransitions.length
     })
     
+    // Generate AI-powered title (FIX 1)
+    logger.log('StoryCreator', 'Generating AI-powered title...')
+    const title = await generateTitle(foundation, charactersData, brief, logger)
+    logger.log('StoryCreator', `Generated title: "${title}"`)
+    
     // Combine all stages into final DNA
     const dna = combineStagesToDNA(
       foundation,
@@ -198,7 +203,8 @@ export async function generateStoryDNA(
       chaptersData,
       brief,
       storyId,
-      characterNames
+      characterNames,
+      title
     )
     
     logger.log('StoryCreator', `DNA generated successfully in ${Date.now() - startTime}ms`, {
@@ -213,6 +219,19 @@ export async function generateStoryDNA(
     logger.error('StoryCreator', 'Failed to generate story DNA', error)
     throw error
   }
+}
+
+/**
+ * Get reading level specification for DNA generation (FIX 5)
+ */
+function getReadingLevelSpecForDNA(level: string): string {
+  const specs: Record<string, string> = {
+    early: 'Ages 4-7: Simple vocabulary (1-2 syllables), short sentences (5-10 words), basic themes, 400-600 words per chapter',
+    independent: 'Ages 7-10: Grade-appropriate vocabulary, moderate sentences (8-15 words), accessible themes with some depth, 800-1200 words per chapter',
+    confident: 'Ages 10-13: Rich vocabulary, varied sentence length, sophisticated themes, literary devices OK, 1000-1500 words per chapter',
+    advanced: 'Ages 13+: Full vocabulary range, complex sentences, mature themes handled appropriately, 1200-2000 words per chapter'
+  }
+  return specs[level] || specs.independent
 }
 
 /**
@@ -233,25 +252,35 @@ async function generateFoundation(
     'You are a creative writing professor specializing in world-building. Craft immersive story foundations.'
   ]
   
+  // Build avoid_content section (FIX 4)
+  const avoidContentSection = brief.avoid_content.length > 0 
+    ? `\n\nCONTENT TO AVOID:\n${brief.avoid_content.map(item => `- ${sanitizeInput(item)}`).join('\n')}`
+    : '';
+  
   // User prompts with slightly different framing (FIX Bug #4: NO example storylines)
+  const readingLevelSpec = getReadingLevelSpecForDNA(brief.reading_level);
+  
   const userPrompts = [
     // Variation 0: Direct approach
     `Create the foundation for a ${brief.reading_level} ${brief.genre} story.
+Reading Level: ${readingLevelSpec}
 Characters: ${characterNames.map(name => sanitizeInput(name)).join(', ')}
 Primary Virtue: ${sanitizeInput(brief.primary_virtue)}
-Themes: ${brief.themes.map(theme => sanitizeInput(theme)).join(', ')}`,
+Themes: ${brief.themes.map(theme => sanitizeInput(theme)).join(', ')}${avoidContentSection}`,
     
     // Variation 1: Context-first approach
     `I need a story foundation for ${brief.reading_level} readers.
+Reading Level: ${readingLevelSpec}
 Genre: ${sanitizeInput(brief.genre)}
 Main characters: ${characterNames.map(name => sanitizeInput(name)).join(', ')}
 Core values to explore: ${brief.themes.map(theme => sanitizeInput(theme)).join(', ')}
-Primary virtue: ${sanitizeInput(brief.primary_virtue)}`,
+Primary virtue: ${sanitizeInput(brief.primary_virtue)}${avoidContentSection}`,
     
     // Variation 2: Goal-oriented approach
     `Design a ${sanitizeInput(brief.genre)} story world that will captivate ${brief.reading_level} readers.
+Reading Level: ${readingLevelSpec}
 Protagonists: ${characterNames.map(name => sanitizeInput(name)).join(', ')}
-The story should explore ${sanitizeInput(brief.primary_virtue)} while teaching ${brief.themes.map(theme => sanitizeInput(theme)).join(' and ')}.`
+The story should explore ${sanitizeInput(brief.primary_virtue)} while teaching ${brief.themes.map(theme => sanitizeInput(theme)).join(' and ')}.${avoidContentSection}`
   ]
   
   const jsonStructure = `
@@ -342,11 +371,19 @@ async function generateCharactersAndRelationships(
 ): Promise<any> {
   const openai = await getOpenAIClient()
   
+  // Build avoid_content section (FIX 4)
+  const avoidContentSection = brief.avoid_content.length > 0 
+    ? `\n\nCONTENT TO AVOID:\n${brief.avoid_content.map(item => `- ${sanitizeInput(item)}`).join('\n')}`
+    : '';
+  
+  const readingLevelSpec = getReadingLevelSpecForDNA(brief.reading_level);
+  
   const prompt = `Create deep character profiles and relationships for a ${sanitizeInput(brief.genre)} story.
+Reading Level: ${readingLevelSpec}
 Context: ${foundationSummary}
 Characters to develop: ${characterNames.map(name => sanitizeInput(name)).join(', ')}
 Primary virtue: ${sanitizeInput(brief.primary_virtue)}
-Themes: ${brief.themes.map(theme => sanitizeInput(theme)).join(', ')}
+Themes: ${brief.themes.map(theme => sanitizeInput(theme)).join(', ')}${avoidContentSection}
 
 CRITICAL: Define character voice through SPEECH FINGERPRINTS, NOT example dialogue.
 Speech fingerprints describe HOW a character talks (patterns, habits, tells).
@@ -448,10 +485,18 @@ async function generateChaptersAndContinuity(
   
   const chapterCount = brief.target_chapters || 5
   
+  // Build avoid_content section (FIX 4)
+  const avoidContentSection = brief.avoid_content.length > 0 
+    ? `\n\nCONTENT TO AVOID:\n${brief.avoid_content.map(item => `- ${sanitizeInput(item)}`).join('\n')}`
+    : '';
+  
+  const readingLevelSpec = getReadingLevelSpecForDNA(brief.reading_level);
+  
   const prompt = `Design ${chapterCount} chapters with perfect continuity for this story.
+Reading Level: ${readingLevelSpec}
 Foundation: ${foundationSummary}
 Characters: ${charactersSummary}
-Key Tensions: ${tensions.map(t => t.description).join('; ')}
+Key Tensions: ${tensions.map(t => t.description).join('; ')}${avoidContentSection}
 
 Generate JSON with exactly ${chapterCount} chapters:
 {
@@ -562,6 +607,43 @@ CRITICAL REQUIREMENTS:
 }
 
 /**
+ * Generate AI-powered creative title (FIX 1)
+ */
+async function generateTitle(
+  foundation: any,
+  charactersData: any,
+  brief: StoryBrief,
+  logger: PipelineLogger
+): Promise<string> {
+  const openai = await getOpenAIClient()
+  
+  try {
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-5.2',
+      messages: [
+        { 
+          role: 'developer', 
+          content: 'You are a children\'s book title expert. Generate ONE creative, memorable title. Return JSON: {"title": "Your Title Here"}' 
+        },
+        { 
+          role: 'user', 
+          content: `Genre: ${brief.genre}\nSetting: ${foundation.worldBible.setting}\nCharacters: ${Object.keys(charactersData.characters).join(', ')}\nTheme: ${brief.primary_virtue}\nConflict: ${foundation.plotStructure.centralConflict}\n\nGenerate a single engaging children's book title. Not generic — make it specific and intriguing.` 
+        }
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.9,
+      max_completion_tokens: 100
+    })
+    
+    const result = JSON.parse(completion.choices[0]?.message?.content || '{}')
+    return result.title || `${brief.primary_virtue} Adventure`
+  } catch (error) {
+    logger.warn('StoryCreator', 'Title generation failed, using fallback')
+    return `${brief.primary_virtue} Adventure`
+  }
+}
+
+/**
  * Combine all stages into final Enhanced DNA V3
  */
 function combineStagesToDNA(
@@ -570,7 +652,8 @@ function combineStagesToDNA(
   chaptersData: any,
   brief: StoryBrief,
   storyId: string,
-  characterNames: string[]
+  characterNames: string[],
+  title: string
 ): StoryDNA {
   return {
     version: 'v3-sequential',
@@ -579,7 +662,7 @@ function combineStagesToDNA(
     // Metadata
     meta: {
       genre: brief.genre,
-      title: `${brief.primary_virtue} Adventure`,
+      title,
       readingLevel: brief.reading_level,
       targetAgeRange: getAgeRange(brief.reading_level),
       coreThemes: brief.themes,

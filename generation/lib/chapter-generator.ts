@@ -304,8 +304,7 @@ ${Object.entries(dna.worldBible.ruleConsequences || {}).map(([rule, consequence]
 Write naturally, avoiding meta-language, brackets, or instructions.
 Focus on sensory details (${dna.worldBible.sensorySignatures.sight}, ${dna.worldBible.sensorySignatures.sound}).
 Track what each character knows and doesn't know.
-End with natural transition or cliffhanger as specified.
-
+End with natural transition or cliffhanger as specified.`
 }
 
 /**
