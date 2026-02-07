@@ -51,8 +51,8 @@ export default function CancelSubscriptionPage() {
     const loadData = async () => {
       try {
         const [metricsData, subStatus] = await Promise.all([
-          getRetentionMetrics(user.id),
-          getSubscriptionStatus(user.id),
+          getRetentionMetricsAction(user.id),
+          getSubscriptionStatusAction(user.id),
         ])
         setMetrics(metricsData)
         setSubscriptionStatus(subStatus)
