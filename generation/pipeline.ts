@@ -19,6 +19,24 @@ import { runQualityCheck } from './lib/quality-check';
 import { runSafetyScan } from './lib/safety-scan';
 import { runValuesCheck } from './lib/values-check';
 import { generateCover } from './lib/cover-generator';
+import type { StageLog } from './types';
+
+/**
+ * Helper to create a stage log entry
+ */
+function createStageLog(stageName: string, startTime: number, status: 'success' | 'failed' = 'success', error?: string): StageLog {
+  const endTime = Date.now();
+  return {
+    stageName,
+    status,
+    startTime: new Date(startTime).toISOString(),
+    endTime: new Date(endTime).toISOString(),
+    duration: endTime - startTime,
+    retryCount: 0,
+    tokensUsed: 0,
+    error,
+  };
+}
 
 /**
  * Run the full pipeline for a single story brief
@@ -32,11 +50,14 @@ export async function runPipeline(brief: StoryBrief): Promise<PipelineRunLog> {
   
   const log: PipelineRunLog = {
     runId,
+    storyId: '', // Will be set after DNA generation
     briefId: brief.id,
-    startedAt: new Date(),
-    stages: {} as any,
-    tokensUsed: { input: 0, output: 0, cost: 0 },
-    result: 'failed',
+    startTime: new Date().toISOString(),
+    stages: {} as PipelineRunLog['stages'],
+    tokenUsage: { dnaTokens: 0, chapterTokens: 0, editorTokens: 0, qaTokens: 0, total: 0 },
+    status: 'running',
+    finalStatus: 'generating',
+    errors: [],
   };
   
   try {
@@ -47,10 +68,7 @@ export async function runPipeline(brief: StoryBrief): Promise<PipelineRunLog> {
     logger.log('PIPELINE', 'Stage 1: DNA Generation');
     const dnaStart = Date.now();
     const dna = await generateStoryDNA(brief, logger);
-    log.stages.dnaGeneration = {
-      status: 'success',
-      durationMs: Date.now() - dnaStart,
-    };
+    log.stages.dnaGeneration = createStageLog('DNA Generation', dnaStart);
     
     // Stage 2: Chapter Drafting with V3 Continuity Tracking
     logger.log('PIPELINE', 'Stage 2: Chapter Drafting with Continuity Tracking');
@@ -58,7 +76,7 @@ export async function runPipeline(brief: StoryBrief): Promise<PipelineRunLog> {
     const chapters = await generateChapters(dna, brief, logger);
     log.stages.chapterDrafting = {
       status: 'success',
-      durationMs: Date.now() - chapterStart,
+      duration: Date.now() - chapterStart,
       chaptersGenerated: chapters.length,
     };
     
@@ -68,7 +86,7 @@ export async function runPipeline(brief: StoryBrief): Promise<PipelineRunLog> {
     const { editedChapters, result: editorResult } = await runAIEditor(dna, chapters, logger);
     log.stages.polishPass = {
       status: 'success',
-      durationMs: Date.now() - editorStart,
+      duration: Date.now() - editorStart,
     };
     
     // Stage 4: Quality Check
@@ -101,7 +119,7 @@ export async function runPipeline(brief: StoryBrief): Promise<PipelineRunLog> {
     const coverResult = await generateCover(dna, logger);
     log.stages.coverArt = {
       status: coverResult.success ? (coverResult.fallbackUsed ? 'fallback' : 'success') : 'failed',
-      durationMs: Date.now() - coverStart,
+      duration: Date.now() - coverStart,
     };
     
     // Determine story status based on QA results
