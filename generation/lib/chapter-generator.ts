@@ -12,7 +12,7 @@
  */
 
 import type { PipelineLogger } from '../utils/logger'
-import { getOpenAIClient, parseJSONSafely } from '../utils/openai'
+import { executeCompletion, executeCompletionFull, parseJSONSafely } from '../utils/openai'
 import type {
   StoryDNA,
   Chapter,
@@ -379,9 +379,7 @@ async function generateChapterContent(
   userPrompt: string,
   logger: PipelineLogger
 ): Promise<string> {
-  const openai = await getOpenAIClient()
-  
-  const completion = await openai.chat.completions.create({
+  const content = await executeCompletion({
     model: 'gpt-5.2',
     messages: [
       { role: 'developer', content: systemPrompt },
@@ -390,12 +388,6 @@ async function generateChapterContent(
     temperature: 0.8,
     max_completion_tokens: 2000,
   })
-  
-  const content = completion.choices[0]?.message?.content || ''
-  
-  if (!content) {
-    throw new Error('Empty chapter content returned from AI')
-  }
   
   return content.trim()
 }
@@ -411,8 +403,6 @@ async function validateChapterContinuity(
   previousChapters: ChapterSummary[],
   logger: PipelineLogger
 ): Promise<{ passed: boolean; violations: Array<{ type: string; description: string }> }> {
-  const openai = await getOpenAIClient()
-  
   const characterRoster = Object.entries(dna.characters)
     .map(([name, char]: [string, CharacterProfile]) => `${name} (${char.pronouns})`)
     .join(', ')
@@ -443,7 +433,7 @@ ${chapterContent}
 Check for continuity violations.`
   
   try {
-    const completion = await openai.chat.completions.create({
+    const response = await executeCompletion({
       model: 'gpt-5-mini',
       messages: [
         { role: 'developer', content: systemPrompt },
@@ -453,7 +443,6 @@ Check for continuity violations.`
       max_completion_tokens: 500,
     })
     
-    const response = completion.choices[0]?.message?.content || '{}'
     const result = parseJSONSafely<any>(response, 'ChapterGenerator')
     
     logger.debug('ChapterGenerator', `Continuity check: ${result.passed ? 'PASSED' : 'FAILED'}`, {
@@ -485,12 +474,10 @@ async function regenerateWithConstraints(
   violations: Array<{ type: string; description: string }>,
   logger: PipelineLogger
 ): Promise<string> {
-  const openai = await getOpenAIClient()
-  
   const constraintsPrompt = `\n\nCRITICAL - Fix these violations from previous attempt:
 ${violations.map((v, i) => `${i + 1}. ${v.type}: ${v.description}`).join('\n')}`
   
-  const completion = await openai.chat.completions.create({
+  const content = await executeCompletion({
     model: 'gpt-5.2',
     messages: [
       { role: 'developer', content: systemPrompt },
@@ -499,12 +486,6 @@ ${violations.map((v, i) => `${i + 1}. ${v.type}: ${v.description}`).join('\n')}`
     temperature: 0.8,
     max_completion_tokens: 2000,
   })
-  
-  const content = completion.choices[0]?.message?.content || ''
-  
-  if (!content) {
-    throw new Error('Empty chapter content returned from AI on regeneration')
-  }
   
   return content.trim()
 }
@@ -550,8 +531,7 @@ function extractChapterEnding(content: string): string {
  */
 async function extractChapterSummary(content: string, chapterNumber: number, logger: PipelineLogger): Promise<string> {
   try {
-    const openai = await getOpenAIClient()
-    const completion = await openai.chat.completions.create({
+    const summaryResponse = await executeCompletion({
       model: 'gpt-5-mini',
       messages: [
         { 
@@ -568,7 +548,7 @@ async function extractChapterSummary(content: string, chapterNumber: number, log
       max_completion_tokens: 200
     })
     
-    const result = parseJSONSafely<any>(completion.choices[0]?.message?.content || '{}', 'ChapterGenerator')
+    const result = parseJSONSafely<any>(summaryResponse, 'ChapterGenerator')
     return result.summary || content.split(/[.!?]+/).slice(0, 2).join('. ').trim() + '.'
   } catch (error) {
     logger.warn('ChapterGenerator', `AI summary failed for chapter ${chapterNumber}, using fallback`)

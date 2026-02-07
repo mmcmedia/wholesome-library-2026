@@ -114,7 +114,12 @@ async function pollForCompletion(taskId: string, logger: PipelineLogger): Promis
     const state = data.data?.state;
     
     if (state === 'success') {
-      const resultJson = JSON.parse(data.data?.resultJson || '{}');
+      let resultJson: any;
+      try {
+        resultJson = JSON.parse(data.data?.resultJson || '{}');
+      } catch {
+        throw new Error(`Failed to parse cover result JSON: ${data.data?.resultJson?.substring(0, 100)}`);
+      }
       const imageUrl = resultJson.resultUrls?.[0];
       
       if (!imageUrl) {

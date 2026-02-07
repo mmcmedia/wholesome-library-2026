@@ -19,7 +19,7 @@ import { runQualityCheck } from './lib/quality-check';
 import { runSafetyScan } from './lib/safety-scan';
 import { runValuesCheck } from './lib/values-check';
 import { generateCover } from './lib/cover-generator';
-import { getTokenUsage, resetTokenUsage, parseJSONSafely } from './utils/openai';
+import { getTokenUsage, resetTokenUsage, parseJSONSafely, executeCompletion } from './utils/openai';
 import type { StageLog } from './types';
 
 /**
@@ -44,8 +44,6 @@ function createStageLog(stageName: string, startTime: number, status: 'success' 
  * Catches obvious issues early (~$0.001 vs wasting ~$0.50 on chapters)
  */
 async function dnaSafetyPreCheck(dna: any, logger: PipelineLogger): Promise<boolean> {
-  const { getOpenAIClient } = await import('./utils/openai')
-  
   const prompt = `Quick safety check on this children's story plan.
 Title: ${dna.meta.title}
 Genre: ${dna.meta.genre}
@@ -60,8 +58,7 @@ Check for: violence, scary content, mature themes, inappropriate conflict.
 Return JSON: {"safe": true/false, "concern": "description if not safe"}`
 
   try {
-    const openai = getOpenAIClient()
-    const completion = await openai.chat.completions.create({
+    const response = await executeCompletion({
       model: 'gpt-5-mini',
       messages: [
         { role: 'developer', content: 'You are a children\'s content safety reviewer. Be conservative.' },
@@ -72,7 +69,7 @@ Return JSON: {"safe": true/false, "concern": "description if not safe"}`
       max_completion_tokens: 100
     })
     
-    const result = parseJSONSafely<any>(completion.choices[0]?.message?.content || '{}', 'Pipeline')
+    const result = parseJSONSafely<any>(response, 'Pipeline')
     
     if (!result.safe) {
       logger.error('PIPELINE', `DNA failed safety pre-check: ${result.concern}`)
@@ -228,12 +225,9 @@ export async function runPipeline(brief: StoryBrief): Promise<PipelineRunLog> {
  */
 async function generateBlurb(dna: any, chapters: any[], logger: PipelineLogger): Promise<string> {
   try {
-    const { getOpenAIClient } = await import('./utils/openai');
-    const openai = getOpenAIClient();
-    
     const firstChapter = chapters[0]?.content?.substring(0, 500) || '';
     
-    const completion = await openai.chat.completions.create({
+    const blurbResponse = await executeCompletion({
       model: 'gpt-5-mini',
       messages: [
         { 
@@ -250,7 +244,7 @@ async function generateBlurb(dna: any, chapters: any[], logger: PipelineLogger):
       max_completion_tokens: 150
     });
     
-    const result = parseJSONSafely<any>(completion.choices[0]?.message?.content || '{}', 'Pipeline');
+    const result = parseJSONSafely<any>(blurbResponse, 'Pipeline');
     return result.blurb || dna.hook || `A ${dna.meta.genre} story about ${Object.keys(dna.characters).slice(0, 2).join(' and ')}.`;
   } catch (error) {
     logger.warn('PIPELINE', 'Blurb generation failed, using fallback');

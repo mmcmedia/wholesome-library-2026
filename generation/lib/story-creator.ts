@@ -12,7 +12,8 @@
  */
 
 import type { PipelineLogger } from '../utils/logger'
-import { getOpenAIClient, parseJSONSafely } from '../utils/openai'
+import { executeCompletion, executeCompletionFull, parseJSONSafely } from '../utils/openai'
+// All API calls route through executeCompletion/executeCompletionFull for retry logic + token tracking
 import type {
   StoryBrief,
   StoryDNA,
@@ -244,7 +245,6 @@ async function generateFoundation(
   variation: number,
   logger: PipelineLogger
 ): Promise<any> {
-  const openai = await getOpenAIClient()
   
   // System prompts for different variations
   const systemPrompts = [
@@ -334,7 +334,7 @@ Generate a JSON structure with ALL fields exactly as shown:
   const systemPrompt = systemPrompts[variation % systemPrompts.length]
   const userPrompt = userPrompts[variation % userPrompts.length] + jsonStructure
   
-  const completion = await openai.chat.completions.create({
+  const response = await executeCompletion({
     model: 'gpt-5.2',
     messages: [
       { role: 'developer', content: systemPrompt },
@@ -345,7 +345,6 @@ Generate a JSON structure with ALL fields exactly as shown:
     max_completion_tokens: 3000,
   })
   
-  const response = completion.choices[0]?.message?.content || '{}'
   logger.debug('StoryCreator', `Stage 1 response length: ${response.length}`)
   
   const parsed = parseJSONSafely<any>(response, 'StoryCreator')
@@ -370,7 +369,6 @@ async function generateCharactersAndRelationships(
   variation: number,
   logger: PipelineLogger
 ): Promise<any> {
-  const openai = await getOpenAIClient()
   
   // Build avoid_content section (FIX 4)
   const avoidContentSection = brief.avoid_content && brief.avoid_content.length > 0 
@@ -437,7 +435,7 @@ IMPORTANT RULES:
 - speechStyle.emotionalTells: Voice changes under emotion (NOT example dialogue)
 - Create ${characterNames.length} unique characters with distinct voices`
   
-  const completion = await openai.chat.completions.create({
+  const completionContent = await executeCompletion({
     model: 'gpt-5.2',
     messages: [
       {
@@ -454,7 +452,7 @@ IMPORTANT RULES:
     max_completion_tokens: 3000,
   })
   
-  const response = completion.choices[0]?.message?.content || '{}'
+  const response = completionContent
   logger.debug('StoryCreator', `Stage 2 response length: ${response.length}`)
   
   const parsed = parseJSONSafely<any>(response, 'StoryCreator')
@@ -482,7 +480,6 @@ async function generateChaptersAndContinuity(
   variation: number,
   logger: PipelineLogger
 ): Promise<any> {
-  const openai = await getOpenAIClient()
   
   const chapterCount = brief.target_chapters || 5
   
@@ -566,7 +563,7 @@ CRITICAL REQUIREMENTS:
 - Track character knowledge progression across chapters
 - Plan cliffhanger resolutions BEFORE writing them`
   
-  const completion = await openai.chat.completions.create({
+  const fullResult = await executeCompletionFull({
     model: 'gpt-5.2',
     messages: [
       {
@@ -583,8 +580,8 @@ CRITICAL REQUIREMENTS:
     max_completion_tokens: 6000,
   })
   
-  const response = completion.choices[0]?.message?.content || '{}'
-  const finishReason = completion.choices[0]?.finish_reason
+  const response = fullResult.content
+  const finishReason = fullResult.finishReason
   
   logger.debug('StoryCreator', `Stage 3 response length: ${response.length}, finish_reason: ${finishReason}`)
   
@@ -616,10 +613,8 @@ async function generateTitle(
   brief: StoryBrief,
   logger: PipelineLogger
 ): Promise<string> {
-  const openai = await getOpenAIClient()
-  
   try {
-    const completion = await openai.chat.completions.create({
+    const titleResponse = await executeCompletion({
       model: 'gpt-5.2',
       messages: [
         { 
@@ -636,7 +631,7 @@ async function generateTitle(
       max_completion_tokens: 100
     })
     
-    const result = JSON.parse(completion.choices[0]?.message?.content || '{}')
+    const result = parseJSONSafely<any>(titleResponse, 'StoryCreator-Title')
     return result.title || `${brief.primary_virtue} Adventure`
   } catch (error) {
     logger.warn('StoryCreator', 'Title generation failed, using fallback')

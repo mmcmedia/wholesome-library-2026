@@ -116,6 +116,70 @@ export async function executeCompletion(
 }
 
 /**
+ * Execute a completion with retry logic, returning the full response object
+ * Use when you need finish_reason or other metadata
+ */
+export async function executeCompletionFull(
+  params: ChatCompletionCreateParamsNonStreaming
+): Promise<{ content: string; finishReason: string | null; usage: { promptTokens: number; completionTokens: number } }> {
+  const client = getOpenAIClient()
+  let lastError: Error | null = null
+
+  for (let attempt = 0; attempt <= RETRY_CONFIG.maxRetries; attempt++) {
+    try {
+      const response = await client.chat.completions.create(params)
+      const content = response.choices[0]?.message?.content
+
+      if (!content) {
+        throw new Error('Empty response from OpenAI API')
+      }
+
+      // Track token usage
+      const promptTokens = response.usage?.prompt_tokens || 0;
+      const completionTokens = response.usage?.completion_tokens || 0;
+      tokenTracker.inputTokens += promptTokens;
+      tokenTracker.outputTokens += completionTokens;
+
+      return {
+        content,
+        finishReason: response.choices[0]?.finish_reason || null,
+        usage: { promptTokens, completionTokens }
+      }
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error))
+
+      if (
+        error instanceof Error &&
+        (error.message.includes('401') || 
+         error.message.includes('authentication') ||
+         error.message.includes('API key'))
+      ) {
+        throw error
+      }
+
+      if (attempt === RETRY_CONFIG.maxRetries) {
+        throw lastError
+      }
+
+      const delay = Math.min(
+        RETRY_CONFIG.baseDelayMs * Math.pow(2, attempt),
+        RETRY_CONFIG.maxDelayMs
+      )
+
+      console.warn(
+        `OpenAI API request failed (attempt ${attempt + 1}/${RETRY_CONFIG.maxRetries + 1}), ` +
+        `retrying in ${delay}ms...`,
+        { error: lastError.message }
+      )
+
+      await new Promise((resolve) => setTimeout(resolve, delay))
+    }
+  }
+
+  throw lastError || new Error('Unknown error in completion request')
+}
+
+/**
  * Parse JSON safely with fallback
  */
 export function parseJSONSafely<T>(
